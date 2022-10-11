@@ -1,7 +1,9 @@
+/*g++ pong3D.cpp -lglut -lGLU -lGL -lGLEW;./a.out*/
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include<map>
 
 using namespace std;
 
@@ -25,9 +27,11 @@ GLfloat lightPosition[] = {0.0f, 0.0f, 1.0f, 0.0f};
 // Parametri per gluPerspective
 static GLfloat fovy = 60, aspect = 1, nearClip = 3, farClip = 40;
 // Parametri per il punto di vista
-static GLfloat dist = 20.5, alphax = 0.0, alphaz = 0.0;
+static GLfloat dist = 20.5, alphax = 90.0, alphaz = 91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
 static GLdouble xStart = 0.0, yStart = 0.0;//per la rotazione con il mouse
 static GLint width = 1200, height = 800;
+static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, 
+{'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
 
 class Player
 {
@@ -37,6 +41,7 @@ private:
   GLfloat z;
   GLfloat dim;
   GLint score;
+  GLfloat step;
 
 public:
   Player(GLfloat d)
@@ -45,10 +50,13 @@ public:
     y = 0;
     z = 0;
     dim = d;
+    step = 0.1;
   }
   GLfloat getX() { return x; }
   GLfloat getY() { return y; }
   GLfloat getZ() { return z; }
+  GLfloat getStep() { return step; }
+  void setStep(GLfloat s){ step = s; }
   void setX(GLfloat x) { this->x = x; }
   void setY(GLfloat y) { this->y = y; }
   void setZ(GLfloat z) { this->z = z; }
@@ -57,11 +65,36 @@ public:
   void encreseScore() { score++; }
   int getScore() { return score; }
   /*movimento player sul piano YZ*/
-  void encreaseY();
-  void decreaseY();
-  void encreaseZ();
-  void decreaseZ();
-
+  void encreaseY(GLfloat dimFieldY)
+  {
+    if (y + dim/2.0f + step <= dimFieldY/2.0f){ //sottraggo o sommo step altrimenti esce
+      cout<<"y:"<<y<<" dimFieldy:"<<dimFieldY/2.0f<<endl;
+      y = y + step;
+    }
+  }
+  void decreaseY(GLfloat dimFieldY)
+  {
+    if (y - dim/2.0f - step >= -dimFieldY/2){
+      cout<<"y:"<<y<<" dimFieldy:"<<dimFieldY/2.0f<<endl;
+      y = y - step;
+    }
+  }
+  void encreaseZ(GLfloat dimFieldZ)
+  {
+    if (z + dim/2.0f +step <= dimFieldZ/2.0f)
+    {
+      cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
+      z = z + step;
+    }
+  }
+  void decreaseZ(GLfloat dimFieldZ)
+  {
+    if (z - dim/2.0f -step >= -dimFieldZ/2.0f)
+    {
+      cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
+      z = z - step;
+    }
+  }
   void drawPlayer();
 };
 
@@ -76,9 +109,9 @@ public:
     this->dimX = dimX;
     this->dimY = dimY;
     this->dimZ = dimZ;
-    player1 = new Player(dimPlayer);
-    player2 = new Player(dimPlayer);
-    player1->setX(dimX/2.0f);
+    player1 = new Player(dimPlayer); //situato a +x*(dimX/2)
+    player2 = new Player(dimPlayer); //situato a -x*(dimX/2)
+    player1->setX(dimX/2.0f); //set profondità dei giocatori. Profondità lungo l'asse x(scelta iniziale del dottore andrea cappabianca)
     player2->setX(-dimX/2.0f);
   }
   void drawField()
@@ -107,29 +140,9 @@ public:
 
 /*Cosi mettiamo globale solo il campo
 è giusto mettere anche la palla nella classe campo*/
-Field campo(15, 10, 10, 3); // X profondità y and z facciata
+Field campo(15, 11, 11, 2); // X profondità y and z facciata. Ultimo parametro dimensione giocatori nel campo
 
-void Player::encreaseY()
-{
-  if (y + dim/2.0f <= campo.getDimY())
-    cout<<y + dim/2.0f <<" "<< campo.getDimY()<<endl;
-    y = y + 1;
-}
-void Player::decreaseY()
-{
-  if (y >= -dim/2)
-    y = y - 1;
-}
-void Player::encreaseZ()
-{
-  if (z + dim/2 <= campo.getDimZ())
-    z = z + 1;
-}
-void Player::decreaseZ()
-{
-  if (z >= -dim/2)
-    z = z - 1;
-}
+
 
 class Ball
 {
@@ -309,45 +322,97 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
 {
   switch (key)
   {
-
   case KEY_ESC:
     exit(0);
   case 'a':
-    campo.getPlayer(1)->encreaseY();
+    keyState['a'] = true;
+    campo.getPlayer(1)->decreaseY(campo.getDimY());
     break;
   case 'd':
-    campo.getPlayer(1)->decreaseY();
+    keyState['d'] = true;
+    campo.getPlayer(1)->encreaseY(campo.getDimZ());
     break;
   case 'w':
-    campo.getPlayer(1)->encreaseZ();
+    keyState['w'] = true;
+    campo.getPlayer(1)->encreaseZ(campo.getDimZ());
     break;
   case 's':
-    campo.getPlayer(1)->decreaseZ();
+    keyState['s'] = true;
+    campo.getPlayer(1)->decreaseZ(campo.getDimZ());
     break;
   }
   glutPostRedisplay();
 }
 
+/*movimento player2 che si muove con le frecce*/
 void specialKeyInput(int key, int _x, int _y)
 {
   switch (key)
   {
   case GLUT_KEY_UP:
-    campo.getPlayer(2)->encreaseZ();
+    keyState['t'] = true; //top
+    campo.getPlayer(2)->encreaseZ(campo.getDimZ());
     break;
   case GLUT_KEY_DOWN:
-    campo.getPlayer(2)->decreaseZ();
+    keyState['b'] = true; //bottom
+    campo.getPlayer(2)->decreaseZ(campo.getDimZ());
     break;
   case GLUT_KEY_LEFT:
-    campo.getPlayer(2)->decreaseY();
+    keyState['l'] = true; //left
+    campo.getPlayer(2)->encreaseY(campo.getDimY()); //specchiato rispetto al player1
     break;
   case GLUT_KEY_RIGHT:
-    campo.getPlayer(2)->encreaseY();
+    keyState['r'] = true; //right
+    campo.getPlayer(2)->decreaseY(campo.getDimY());
     break;
   default:
     break;
   }
-  // glutPostRedisplay();
+  glutPostRedisplay();
+}
+
+void specialKeyUpInput(int key, int _x, int _y){
+  switch (key)
+  {
+  case GLUT_KEY_UP:
+    keyState['t'] = false; //top
+    campo.getPlayer(2)->encreaseZ(campo.getDimZ());
+    break;
+  case GLUT_KEY_DOWN:
+    keyState['b'] = false; //bottom
+    campo.getPlayer(2)->decreaseZ(campo.getDimZ());
+    break;
+  case GLUT_KEY_LEFT:
+    keyState['l'] = false; //left
+    campo.getPlayer(2)->encreaseY(campo.getDimY()); //specchiato rispetto al player1
+    break;
+  case GLUT_KEY_RIGHT:
+    keyState['r'] = false; //right
+    campo.getPlayer(2)->decreaseY(campo.getDimY());
+    break;
+  default:
+    break;
+  }
+}
+
+void inputKeyup(unsigned char key, int x, int y){
+   switch (key)
+  {
+  case KEY_ESC:
+    exit(0);
+  case 'a':
+    keyState['a'] = false;
+    break;
+  case 'd':
+    keyState['d'] = false;
+    break;
+  case 'w':
+    keyState['w'] = false;
+    break;
+  case 's':
+    keyState['s'] = false;
+    break;
+  }
 }
 
 // Impostazione del punto di vista
@@ -408,6 +473,29 @@ GLvoid drawScene(GLvoid)
   glutSwapBuffers();
 }
 
+/*funzione idle per continuare gli spostamenti fin quando i tasti sono premuti*/
+void idle(){
+  //idle per i tasti asdw   
+  if(keyState['a'])
+    campo.getPlayer(1)->decreaseY(campo.getDimY());
+  if(keyState['s'])
+    campo.getPlayer(1)->decreaseZ(campo.getDimZ());
+  if(keyState['d'])
+    campo.getPlayer(1)->encreaseY(campo.getDimZ());
+  if(keyState['w'])
+    campo.getPlayer(1)->encreaseZ(campo.getDimZ());
+
+  if(keyState['t'])
+    campo.getPlayer(2)->encreaseZ(campo.getDimZ());
+  if(keyState['b'])
+    campo.getPlayer(2)->decreaseZ(campo.getDimZ());
+  if(keyState['l'])
+    campo.getPlayer(2)->encreaseY(campo.getDimY());
+  if(keyState['r'])
+    campo.getPlayer(2)->decreaseY(campo.getDimY());
+  glutPostRedisplay();
+}
+
 int main(int argc, char *argv[])
 {
   glutInit(&argc, argv);
@@ -417,8 +505,20 @@ int main(int argc, char *argv[])
 	glutInitWindowPosition(X_POS, Y_POS);
   glutCreateWindow("Pong3d");
   init();
-  glutKeyboardFunc(inputKey);
+  glutIgnoreKeyRepeat(1); //serve a ignorare la ripetizione delle callback dei tasti da tastiera quando sono "tenuti giù" perchè li ho gestito separatamente la pressione e il rilascio
+  //attiva callback freccette
+  //pressione
   glutSpecialFunc(specialKeyInput);
+  //rilascio
+  glutSpecialUpFunc(specialKeyUpInput);
+
+  //attiva callback tasti "asdw"
+  //pressione
+  glutKeyboardFunc(inputKey);
+  //rilascio
+  glutKeyboardUpFunc(inputKeyup);
+  //
+  glutIdleFunc(idle);
 
   glutDisplayFunc(drawScene);
   glutTimerFunc(50, ball->moveBall, 0);
