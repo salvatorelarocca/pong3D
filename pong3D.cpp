@@ -120,7 +120,8 @@ public:
     glPushMatrix();
     glTranslatef(0.0f, 0.0f, 0.0f);
     glScalef(dimX, dimY, dimZ);
-    glutWireCube(1);
+    //glutWireCube(1);
+    cube(); //altra funzione per disegnare il cubo ma texturizabile
     glPopMatrix();
   }
 
