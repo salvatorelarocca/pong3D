@@ -99,6 +99,89 @@ public:
   void drawPlayer();
 };
 
+static void cubebase(void) //costruscie una faccia del cubo, viene richiaata 6 volte da cubebase
+/*specifies a side of a cube*/
+{
+	glBegin(GL_POLYGON);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3d(-0.5, -0.5, 0.0);
+
+	glTexCoord2f(0.0, 1.0);
+	glVertex3d(-0.5, 0.5, 0.0);
+
+	glTexCoord2f(1.0, 1.0);
+	glVertex3d(0.5, 0.5, 0.0);
+
+	glTexCoord2f(1.0, 0.0);
+	glVertex3d(0.5, -0.5, 0.0);
+	glEnd();
+}
+
+static void cube(void)  //ci serve per i parallelepipedi texturizabili
+/*uses cube side to construct a cube, making use of the modelview matrix*/
+{
+	/*make sure we're dealing with modelview matrix*/
+	glMatrixMode(GL_MODELVIEW);
+
+	/*pushes and duplicates current matrix*/
+	glPushMatrix();
+
+
+	/*construct the base*/
+	cubebase();
+
+	glPushMatrix();
+	/*construct side on +x axis*/
+	glTranslated(0.5, 0.0, 0.5);
+	glRotated(90.0, 0.0, 1.0, 0.0);
+	cubebase();
+
+	glPopMatrix();
+
+	/*construct side on -x axis*/
+	glPushMatrix();
+	glTranslated(-0.5, 0.0, 0.5);
+	glRotated(-90.0, 0.0, 1.0, 0.0);
+	cubebase();
+	glPopMatrix();
+
+	/*construct side on +y axis*/
+	glPushMatrix();
+	glTranslated(0.0, 0.5, 0.5);
+	glRotated(-90.0, 1.0, 0.0, 0.0);
+	cubebase();
+	glPopMatrix();
+
+	/*construct side on -y axis*/
+	glPushMatrix();
+	glTranslated(0.0, -0.5, 0.5);
+	glRotated(90.0, 1.0, 0.0, 0.0);
+	cubebase();
+	glPopMatrix();
+
+	/*construct top*/
+
+	glBegin(GL_POLYGON);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3d(-0.5, -0.5, 1.0);
+
+	glTexCoord2f(1.0, 0.0);
+	glVertex3d(0.5, -0.5, 1.0);
+
+	glTexCoord2f(1.0, 1.0);
+	glVertex3d(0.5, 0.5, 1.0);
+
+	glTexCoord2f(0.0, 1.0);
+	glVertex3d(-0.5, 0.5, 1.0);
+	glEnd();
+
+
+	glPopMatrix();
+
+	glFlush();
+}
+
+
 class Field
 {
 private:
@@ -120,9 +203,20 @@ public:
     glPushMatrix();
     glTranslatef(0.0f, 0.0f, 0.0f);
     glScalef(dimX, dimY, dimZ);
-    //glutWireCube(1);
-    cube(); //altra funzione per disegnare il cubo ma texturizabile
+    glutWireCube(1);
     glPopMatrix();
+
+    glPushMatrix();
+
+ 	glTranslated(0.0, 0.0, -dimZ/2);
+	glRotated(0.0, 0.0, 0.0, 0.0);
+   glScalef(dimX, dimY,0);
+   
+  
+	cubebase();
+  glPopMatrix();
+  
+
   }
 
   GLfloat getDimX(){ return dimX; }
@@ -245,7 +339,7 @@ void loadExternalTextures()
   
   int numeroTexture = 2;
   int i = 0;
-  char* filenameTexture[] = {"chessboard.jpg","moon.jpg"}; //warning ma non errore e li legge 
+  char* filenameTexture[] = {"Brick_Texture_blue.png","fish.png"}; //warning ma non errore e li legge 
 	int width, height, channels;
 	unsigned char *img;
   while(i<numeroTexture)
@@ -270,87 +364,6 @@ void loadExternalTextures()
 }
 
 
-static void cubebase(void) //costruscie una faccia del cubo, viene richiaata 6 volte da cubebase
-/*specifies a side of a cube*/
-{
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0.0, 0.0);
-	glVertex3d(-0.5, -0.5, 0.0);
-
-	glTexCoord2f(0.0, 1.0);
-	glVertex3d(-0.5, 0.5, 0.0);
-
-	glTexCoord2f(1.0, 1.0);
-	glVertex3d(0.5, 0.5, 0.0);
-
-	glTexCoord2f(1.0, 0.0);
-	glVertex3d(0.5, -0.5, 0.0);
-	glEnd();
-}
-
-static void cube(void)  //ci serve per i parallelepipedi texturizabili
-/*uses cube side to construct a cube, making use of the modelview matrix*/
-{
-	/*make sure we're dealing with modelview matrix*/
-	glMatrixMode(GL_MODELVIEW);
-
-	/*pushes and duplicates current matrix*/
-	glPushMatrix();
-
-
-	/*construct the base*/
-	cubebase();
-
-	glPushMatrix();
-	/*construct side on +x axis*/
-	glTranslated(0.5, 0.0, 0.5);
-	glRotated(90.0, 0.0, 1.0, 0.0);
-	cubebase();
-
-	glPopMatrix();
-
-	/*construct side on -x axis*/
-	glPushMatrix();
-	glTranslated(-0.5, 0.0, 0.5);
-	glRotated(-90.0, 0.0, 1.0, 0.0);
-	cubebase();
-	glPopMatrix();
-
-	/*construct side on +y axis*/
-	glPushMatrix();
-	glTranslated(0.0, 0.5, 0.5);
-	glRotated(-90.0, 1.0, 0.0, 0.0);
-	cubebase();
-	glPopMatrix();
-
-	/*construct side on -y axis*/
-	glPushMatrix();
-	glTranslated(0.0, -0.5, 0.5);
-	glRotated(90.0, 1.0, 0.0, 0.0);
-	cubebase();
-	glPopMatrix();
-
-	/*construct top*/
-
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0.0, 0.0);
-	glVertex3d(-0.5, -0.5, 1.0);
-
-	glTexCoord2f(1.0, 0.0);
-	glVertex3d(0.5, -0.5, 1.0);
-
-	glTexCoord2f(1.0, 1.0);
-	glVertex3d(0.5, 0.5, 1.0);
-
-	glTexCoord2f(0.0, 1.0);
-	glVertex3d(-0.5, 0.5, 1.0);
-	glEnd();
-
-
-	glPopMatrix();
-
-	glFlush();
-}
 
 
 void Player::drawPlayer()
@@ -597,16 +610,19 @@ GLvoid drawScene(GLvoid)
   glMaterialfv(GL_FRONT, GL_SPECULAR, Nero);
 
   /*Draw fiels*/
-  campo.drawField();
-
+  
 
 //texture applicata al player ma si puo fare anche direttamente nel drawplayer 
 glPushMatrix();
  glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+  glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texutre
   campo.getPlayer(1)->drawPlayer();
+   glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  campo.drawField();
+
  glPopMatrix();
  glDisable(GL_TEXTURE_2D);
   
