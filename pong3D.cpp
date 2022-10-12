@@ -238,8 +238,6 @@ void Ball::moveBall(int i)
 }
 
 
-
-
 //serve per caricare texture da immagini con soil
 void loadExternalTextures()			
 {
@@ -269,8 +267,6 @@ void loadExternalTextures()
     i++;
   }
 }
-
-
 
 
 static void cubebase(void) //costruscie una faccia del cubo, viene richiaata 6 volte da cubebase
