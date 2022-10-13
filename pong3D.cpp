@@ -339,7 +339,7 @@ void loadExternalTextures()
   
   int numeroTexture = 2;
   int i = 0;
-  char* filenameTexture[] = {"Brick_Texture_blue.png","fish.png"}; //warning ma non errore e li legge 
+  char* filenameTexture[] = {"a.jpg","fish.png"}; //warning ma non errore e li legge 
 	int width, height, channels;
 	unsigned char *img;
   while(i<numeroTexture)
@@ -620,7 +620,7 @@ glPushMatrix();
 	campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texutre
   campo.getPlayer(1)->drawPlayer();
    glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   campo.drawField();
 
  glPopMatrix();
