@@ -236,7 +236,7 @@ public:
 
 /*Cosi mettiamo globale solo il campo
 è giusto mettere anche la palla nella classe campo*/
-Field campo(15, 11, 11, 2); // X profondità y and z facciata. Ultimo parametro dimensione giocatori nel campo
+Field campo(20, 11, 11, 2); // X profondità y and z facciata. Ultimo parametro dimensione giocatori nel campo
 
 
 
@@ -247,6 +247,7 @@ private:
   GLfloat speedX;
   GLfloat speedY;
   GLfloat speedZ;
+  GLfloat raggio;
   // qua aggiungere la texture quando capirte come cazzi si fa
 public:
   Ball()
@@ -257,6 +258,7 @@ public:
     speedX = 0.2f;
     speedY = 0.2f;
     speedZ = 0.2f;
+    raggio = 0.2f;
   }
   Ball(GLfloat x, GLfloat y, GLfloat z, GLfloat sx, GLfloat sy, GLfloat sz)
   {
@@ -266,6 +268,7 @@ public:
     speedX = sx;
     speedY = sy;
     speedZ = sz;
+    raggio = 0.2f;
   }
   Ball(GLfloat x, GLfloat y, GLfloat z)
   {
@@ -275,6 +278,7 @@ public:
     speedX = 0.2f;
     speedY = 0.2f;
     speedZ = 0.2f;
+    raggio = 0.2f;
   }
 
   void setXPal(int x) { xPal = x; }
@@ -283,6 +287,8 @@ public:
   GLfloat getYPal() { return yPal; }
   void setZPal(int z) { zPal = z; }
   GLfloat getZPal() { return zPal; }
+  void setRaggio(int r ) {raggio=r;}
+  GLfloat getRaggio(){return raggio;}
 
   static void moveBall(int);
   void moveball(int);
@@ -297,12 +303,12 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   yPal = yPal + speedY;
   zPal = zPal + speedZ;
   // collisione con i player
-  if (xPal >= 9 || xPal <= -9)
+  if (xPal >= campo.getDimX()/2 || xPal <= -campo.getDimX()/2)
   {
-    if (campo.getPlayer(2)->getY() - 2 < yPal && campo.getPlayer(2)->getY() + 2 > yPal &&
-            campo.getPlayer(2)->getZ() - 2 < zPal && campo.getPlayer(2)->getZ() + 2 > zPal ||
-        (campo.getPlayer(1)->getY() - 2 < yPal && campo.getPlayer(1)->getY() + 2 > yPal &&
-         campo.getPlayer(1)->getZ() - 2 < zPal && campo.getPlayer(1)->getZ() + 2 > zPal)){
+    if (campo.getPlayer(2)->getY() < yPal && campo.getPlayer(2)->getY() + campo.getPlayer(2)->getDim() > yPal &&
+            campo.getPlayer(2)->getZ()< zPal && campo.getPlayer(2)->getZ() + campo.getPlayer(2)->getDim() > zPal ||
+        (campo.getPlayer(1)->getY() < yPal && campo.getPlayer(1)->getY() + campo.getPlayer(2)->getDim() > yPal &&
+         campo.getPlayer(1)->getZ() < zPal && campo.getPlayer(1)->getZ() + campo.getPlayer(2)->getDim() > zPal)){
       speedX = -speedX;
     }
     else
@@ -315,11 +321,11 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   }
 
   // collisione con il campo
-  if (yPal >= 4 || yPal <= -4)
+  if (yPal+ball->getRaggio() >= campo.getDimY()/2 || yPal-ball->getRaggio() <= -campo.getDimY()/2)
   {
     speedY = -speedY;
   }
-  if (zPal >= 4 || zPal <= -4)
+  if (zPal+ball->getRaggio() >= campo.getDimZ()/2 || zPal-ball->getRaggio() <= -campo.getDimZ()/2)
   {
     speedZ = -speedZ;
   }
@@ -362,6 +368,8 @@ void loadExternalTextures()
     i++;
   }
 }
+
+
 
 
 
@@ -600,7 +608,7 @@ GLvoid drawScene(GLvoid)
 
   glPushMatrix();
   glTranslatef(ball->getXPal(), ball->getYPal(), ball->getZPal());
-  glutSolidSphere(0.4, 31, 31); // ball.draw
+  glutSolidSphere(ball->getRaggio(), 31, 31); // ball.draw
   glPopMatrix();
 
   /* Cubo: materiale giallo matto che emette luce.
