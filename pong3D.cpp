@@ -22,7 +22,7 @@ GLfloat Giallo[] = {1.0f, 1.0f, 0.0f, 1.0f};
 GLfloat RossoTenue[] = {0.3f, 0.1f, 0.1f, 1.0f};
 GLfloat BluTenue[] = {0.1f, 0.1f, 0.3f, 1.0f};
 GLfloat GialloTenue[] = {0.6f, 0.6f, 0.0f, 1.0f};
-
+GLfloat myDistance;
 static unsigned int texture[2]; // Array of texture indices. Serve ad indicare l indice della texture 
 
 
@@ -309,23 +309,37 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   yPal = yPal + speedY;
   zPal = zPal + speedZ;
   // collisione con i player
-  if (xPal >= campo.getDimX()/2 || xPal <= -campo.getDimX()/2)
+  if (xPal >= campo.getDimX()/2)
   {
-    if (campo.getPlayer(2)->getY() < yPal && campo.getPlayer(2)->getY() + campo.getPlayer(2)->getDim() > yPal &&
-            campo.getPlayer(2)->getZ()< zPal && campo.getPlayer(2)->getZ() + campo.getPlayer(2)->getDim() > zPal ||
-        (campo.getPlayer(1)->getY() < yPal && campo.getPlayer(1)->getY() + campo.getPlayer(2)->getDim() > yPal &&
-         campo.getPlayer(1)->getZ() < zPal && campo.getPlayer(1)->getZ() + campo.getPlayer(2)->getDim() > zPal)){
-      speedX = -speedX;
-    }
-    else
-    {
+      myDistance=sqrt(pow(xPal-campo.getPlayer(1)->getX(),2.0)+pow(yPal-campo.getPlayer(1)->getY(),2.0)+pow(zPal-campo.getPlayer(1)->getZ(),2.0));
+        if(myDistance >= ball->getRadius() && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(1)->getDim()*1.4/2,2) ) )
+          speedX = -speedX; 
+        else
+        {
       // aumento score
-      xPal = 0;
-      yPal = 0;
-      zPal = 0;
-    }
+          xPal = 0;
+          yPal = 0;
+          zPal = 0;
+          campo.getPlayer(2)->encreseScore();
+        }
   }
 
+  if (xPal <= -campo.getDimX()/2)
+  {
+      myDistance=sqrt(pow(xPal-campo.getPlayer(2)->getX(),2.0)+pow(yPal-campo.getPlayer(2)->getY(),2.0)+pow(zPal-campo.getPlayer(2)->getZ(),2.0));
+        if(myDistance >= ball->getRadius() && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(2)->getDim()*1.4/2,2) ) )
+          speedX = -speedX; 
+        else
+        {
+      // aumento score
+          xPal = 0;
+          yPal = 0;
+          zPal = 0;
+          campo.getPlayer(1)->encreseScore();
+        }
+        
+  }
+  cout<<"mydistance"<<myDistance<<endl<<endl;
   // collisione con il campo
   if (yPal+ball->getRadius() >= campo.getDimY()/2 || yPal-ball->getRadius() <= -campo.getDimY()/2)
   {
