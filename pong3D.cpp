@@ -387,7 +387,7 @@ void Player::drawPlayer()
   glMaterialfv(GL_FRONT, GL_SPECULAR, Nero);
   glPushMatrix();
     glTranslatef(x, y, z);
-    glScalef(0.01, dim, dim); //0.01 è lo spessore che sto trattando come costante
+    glScalef(0.01, dim, dim); //0.01 è lo spessore che sto trattando come costanteee
     //glutWireCube(1);
     cube(); // definisce il cubo tramite poligoni per le texture 
   glPopMatrix();
