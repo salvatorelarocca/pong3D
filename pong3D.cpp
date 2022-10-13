@@ -4,6 +4,8 @@
 #include <iostream>
 #include<map>
 #include <SOIL/SOIL.h>
+#include<time.h>
+
 using namespace std;
 
 #define KEY_ESC 27
@@ -26,12 +28,12 @@ static unsigned int texture[2]; // Array of texture indices. Serve ad indicare l
 
 GLfloat lightPosition[] = {0.0f, 0.0f, 1.0f, 0.0f};
 // Parametri per gluPerspective
-static GLfloat fovy = 60, aspect = 1, nearClip = 3, farClip = 40;
+static GLfloat fovy = 80, aspect = 1, nearClip = 3, farClip = 100;
 // Parametri per il punto di vista
-static GLfloat dist = 20.5, alphax = 90.0, alphaz = 91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
+static GLfloat dist = 30, alphaxP1 = 90.0, alphazP1 = 91.0, alphaxP2 = 90.0, alphazP2 = -91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
 static GLdouble xStart = 0.0, yStart = 0.0;//per la rotazione con il mouse
 static GLint width = 1200, height = 800;
-static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, 
+static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false},
 {'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
 
 class Player
@@ -82,7 +84,7 @@ public:
   }
   void encreaseZ(GLfloat dimFieldZ)
   {
-    if (z + dim/2.0f +step <= dimFieldZ/2.0f)
+    if (z + dim +step <= dimFieldZ/2.0f)
     {
       cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
       z = z + step;
@@ -90,7 +92,7 @@ public:
   }
   void decreaseZ(GLfloat dimFieldZ)
   {
-    if (z - dim/2.0f -step >= -dimFieldZ/2.0f)
+    if (z -step >= -dimFieldZ/2.0f)
     {
       cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
       z = z - step;
@@ -102,6 +104,7 @@ public:
 static void cubebase(void) //costruscie una faccia del cubo, viene richiaata 6 volte da cubebase
 /*specifies a side of a cube*/
 {
+  glLineWidth(2.5f);
 	glBegin(GL_POLYGON);
 	glTexCoord2f(0.0, 0.0);
 	glVertex3d(-0.5, -0.5, 0.0);
@@ -236,7 +239,7 @@ public:
 
 /*Cosi mettiamo globale solo il campo
 è giusto mettere anche la palla nella classe campo*/
-Field campo(20, 11, 11, 2); // X profondità y and z facciata. Ultimo parametro dimensione giocatori nel campo
+Field campo(40, 11, 11, 2); // X profondità y and z facciata. Ultimo parametro dimensione giocatori nel campo
 
 
 
@@ -247,20 +250,11 @@ private:
   GLfloat speedX;
   GLfloat speedY;
   GLfloat speedZ;
-  GLfloat raggio;
+  
+  GLfloat radius;
   // qua aggiungere la texture quando capirte come cazzi si fa
 public:
-  Ball()
-  {
-    xPal = 0.0f;
-    yPal = 0.0f;
-    zPal = 0.0f;
-    speedX = 0.2f;
-    speedY = 0.2f;
-    speedZ = 0.2f;
-    raggio = 0.2f;
-  }
-  Ball(GLfloat x, GLfloat y, GLfloat z, GLfloat sx, GLfloat sy, GLfloat sz)
+  Ball(GLfloat x, GLfloat y, GLfloat z, GLfloat r, GLfloat sx, GLfloat sy, GLfloat sz)
   {
     xPal = x;
     yPal = y;
@@ -268,32 +262,44 @@ public:
     speedX = sx;
     speedY = sy;
     speedZ = sz;
-    raggio = 0.2f;
+    radius = r;
   }
-  Ball(GLfloat x, GLfloat y, GLfloat z)
+
+  Ball(GLfloat x, GLfloat y, GLfloat z, GLfloat r)
   {
+    srand(time(NULL));
     xPal = x;
     yPal = y;
     zPal = z;
-    speedX = 0.2f;
-    speedY = 0.2f;
-    speedZ = 0.2f;
-    raggio = 0.2f;
+    speedX = 0.6;
+    speedY = 0.1;
+    speedZ = 0.3;
+    radius = r;
   }
 
-  void setXPal(int x) { xPal = x; }
+  void setXPal(GLfloat x) { xPal = x; }
   GLfloat getXPal() { return xPal; }
-  void setYPal(int y) { yPal = y; }
+  void setYPal(GLfloat y) { yPal = y; }
   GLfloat getYPal() { return yPal; }
-  void setZPal(int z) { zPal = z; }
+  void setZPal(GLfloat z) { zPal = z; }
   GLfloat getZPal() { return zPal; }
-  void setRaggio(int r ) {raggio=r;}
-  GLfloat getRaggio(){return raggio;}
+  void setRadius(GLfloat r ) { radius = r;}
+  GLfloat getRadius(){ return radius; }
+
+  void setSpeedXYZ(GLfloat sX, GLfloat sY, GLfloat sZ){
+    speedX = sX;
+    speedY = sY;
+    speedZ = sZ;
+  }
+
+  GLfloat getSpeedX(){ return speedX; }
+  GLfloat getSpeedY(){ return speedY; }
+  GLfloat getSpeedZ(){ return speedZ; }
 
   static void moveBall(int);
   void moveball(int);
 };
-Ball *ball = new Ball(0, 0, 0);
+Ball *ball = new Ball(0, 0, 0, 0.5f);
 
 //Qui sarebbe giusto passare
 void Ball::moveball(int i) // faccio check collision con bordi e con i player
@@ -321,11 +327,11 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   }
 
   // collisione con il campo
-  if (yPal+ball->getRaggio() >= campo.getDimY()/2 || yPal-ball->getRaggio() <= -campo.getDimY()/2)
+  if (yPal+ball->getRadius() >= campo.getDimY()/2 || yPal-ball->getRadius() <= -campo.getDimY()/2)
   {
     speedY = -speedY;
   }
-  if (zPal+ball->getRaggio() >= campo.getDimZ()/2 || zPal-ball->getRaggio() <= -campo.getDimZ()/2)
+  if (zPal+ball->getRadius() >= campo.getDimZ()/2 || zPal-ball->getRadius() <= -campo.getDimZ()/2)
   {
     speedZ = -speedZ;
   }
@@ -345,7 +351,7 @@ void loadExternalTextures()
   
   int numeroTexture = 2;
   int i = 0;
-  char* filenameTexture[] = {"a.jpg","fish.png"}; //warning ma non errore e li legge 
+  char* filenameTexture[] = {"a.png","fish.png"}; //warning ma non errore e li legge 
 	int width, height, channels;
 	unsigned char *img;
   while(i<numeroTexture)
@@ -404,29 +410,33 @@ GLvoid mouse(GLint button, GLint state, GLint x, GLint y)
 // Movimento del mouse
 GLvoid motion(GLint x, GLint y)
 {
-  /* Aggiorna il punto di vista */
-  alphax -= (GLdouble)(y - yStart);
-  alphaz += (GLdouble)(x - xStart);
-  /* Aggiorna la posizione del mouse salvata */
-  xStart = x;
-  yStart = y;
-  glutPostRedisplay();
+  if(keyState['p']){
+    if(x<width/2.0f){
+      /* Aggiorna il punto di vista */
+      alphaxP1 -= (GLdouble)(y - yStart);
+      alphazP1 += (GLdouble)(x - xStart);
+      /* Aggiorna la posizione del mouse salvata */
+    }else{
+      alphaxP2 -= (GLdouble)(y - yStart);
+      alphazP2 += (GLdouble)(x - xStart);
+    }
+    xStart = x;
+    yStart = y;
+    glutPostRedisplay();
+  }
 }
 
 // Disegna un sistema di assi cartesiane con origine in (0,0,0)
 GLvoid drawAxis(GLfloat lato)
 {
-  GLfloat blu[] = {0.0f, 0.0f, 1.0f};
-  GLfloat rosso[] = {1.0f, 0.0f, 0.0f};
-  GLfloat verde[] = {0.0f, 1.0f, 0.0f};
   glBegin(GL_LINES);
-  glColor3fv(rosso);
+  glColor3fv(Rosso);
   glVertex3f(0, 0, 0);
   glVertex3f(lato, 0, 0);
-  glColor3fv(verde);
+  glColor3fv(Verde);
   glVertex3f(0, 0, 0);
   glVertex3f(0, lato, 0);
-  glColor3fv(blu);
+  glColor3fv(Blu);
   glVertex3f(0, 0, 0);
   glVertex3f(0, 0, lato);
   glEnd();
@@ -450,7 +460,7 @@ GLvoid init(GLvoid)
   /* Matrice di proiezione */
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective(fovy, 1, nearClip, farClip);
+  gluPerspective(fovy, (GLfloat)width/height, nearClip, farClip);
   /* Matrice di ModelView */
   glMatrixMode(GL_MODELVIEW);
 
@@ -478,25 +488,36 @@ GLvoid init(GLvoid)
 // Callback per la tastiera
 GLvoid inputKey(GLubyte key, GLint x, GLint y)
 {
+  static GLfloat oldSpeedX, oldSpeedY, oldSpeedZ;
   switch (key)
   {
   case KEY_ESC:
     exit(0);
   case 'a':
     keyState['a'] = true;
-    campo.getPlayer(1)->decreaseY(campo.getDimY());
     break;
   case 'd':
     keyState['d'] = true;
-    campo.getPlayer(1)->encreaseY(campo.getDimZ());
     break;
   case 'w':
     keyState['w'] = true;
-    campo.getPlayer(1)->encreaseZ(campo.getDimZ());
     break;
   case 's':
     keyState['s'] = true;
-    campo.getPlayer(1)->decreaseZ(campo.getDimZ());
+    break;
+  case 'p': //tasto pause
+    keyState['p'] = !keyState['p'];
+    if(keyState['p']){
+      oldSpeedX = ball->getSpeedX(); /*salvo la velocità*/
+      oldSpeedY = ball->getSpeedY();
+      oldSpeedZ = ball->getSpeedZ();
+      ball->setSpeedXYZ(0.0f, 0.0f, 0.0f); /*fermo la pallina*/
+    }else{
+      ball->setSpeedXYZ(oldSpeedX, oldSpeedY, oldSpeedZ); /*riparte la pallina alla vecchia velocità*/
+    }
+    break;
+  case ' ':
+    /*inserire tasto start*/
     break;
   }
   glutPostRedisplay();
@@ -509,19 +530,15 @@ void specialKeyInput(int key, int _x, int _y)
   {
   case GLUT_KEY_UP:
     keyState['t'] = true; //top
-    campo.getPlayer(2)->encreaseZ(campo.getDimZ());
     break;
   case GLUT_KEY_DOWN:
     keyState['b'] = true; //bottom
-    campo.getPlayer(2)->decreaseZ(campo.getDimZ());
     break;
   case GLUT_KEY_LEFT:
     keyState['l'] = true; //left
-    campo.getPlayer(2)->encreaseY(campo.getDimY()); //specchiato rispetto al player1
     break;
   case GLUT_KEY_RIGHT:
     keyState['r'] = true; //right
-    campo.getPlayer(2)->decreaseY(campo.getDimY());
     break;
   default:
     break;
@@ -534,19 +551,15 @@ void specialKeyUpInput(int key, int _x, int _y){
   {
   case GLUT_KEY_UP:
     keyState['t'] = false; //top
-    campo.getPlayer(2)->encreaseZ(campo.getDimZ());
     break;
   case GLUT_KEY_DOWN:
     keyState['b'] = false; //bottom
-    campo.getPlayer(2)->decreaseZ(campo.getDimZ());
     break;
   case GLUT_KEY_LEFT:
     keyState['l'] = false; //left
-    campo.getPlayer(2)->encreaseY(campo.getDimY()); //specchiato rispetto al player1
     break;
   case GLUT_KEY_RIGHT:
     keyState['r'] = false; //right
-    campo.getPlayer(2)->decreaseY(campo.getDimY());
     break;
   default:
     break;
@@ -574,113 +587,264 @@ void inputKeyup(unsigned char key, int x, int y){
 }
 
 // Impostazione del punto di vista
-void setView(GLfloat alphax, GLfloat alphaz)
+void setView(GLfloat alphax, GLfloat alphaz, GLfloat d)
 {
-  glTranslatef(0.0f, 0.0f, -dist);
+  glTranslatef(0.0f, 0.0f, -d);
   glRotatef(-alphax, 1.0f, 0.0f, 0.0f);
   glRotatef(-alphaz, 0.0f, 0.0f, 1.0f);
 }
 
+void drawFilledCircle(GLfloat x, GLfloat y, GLfloat radius){
+	int i;
+	int triangleAmount = 20; //# of triangles used to draw circle
+	
+	//GLfloat radius = 0.8f; //radius
+	GLfloat twicePi = 2.0f * M_PI;
+	
+	glBegin(GL_TRIANGLE_FAN);
+		glVertex2f(x, y); // center of circle
+		for(i = 0; i <= triangleAmount; i++){ 
+			glVertex2f(
+		            x + (radius * cos(i *  twicePi / triangleAmount)), 
+			    y + (radius * sin(i * twicePi / triangleAmount))
+			);
+		}
+	glEnd();
+}
 
 // Callback di display
 GLvoid drawScene(GLvoid)
 {
-
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  /*View first player*/
+  glViewport(0, 0, width * 0.5f, height * 0.75f);
+  glPushMatrix();
+    setView(alphaxP1, alphazP1, dist);
+    // Posizione luce legata al punto di vista:
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+    drawAxis(20.0f);
+
+    glEnable(GL_LIGHTING);
+      glMaterialfv(GL_FRONT, GL_EMISSION, Nero);
+      glMaterialfv(GL_FRONT, GL_AMBIENT, RossoTenue);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, Rosso);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, Verde);
+      glMaterialf(GL_FRONT, GL_SHININESS, 100.0f);
 
   glPushMatrix();
-
-  // Posizione luce legata al punto di vista:
-  glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-  setView(alphax, alphaz);
-  drawAxis(20.0f);
-
-  glEnable(GL_LIGHTING);
-
-  /* Emissione di default per Sfera e Toro */
-  glMaterialfv(GL_FRONT, GL_EMISSION, Nero);
-
-  /* Sfera: materiale rosso brillante, con highlight verde */
-  glMaterialfv(GL_FRONT, GL_AMBIENT, RossoTenue);
-  glMaterialfv(GL_FRONT, GL_DIFFUSE, Rosso);
-  glMaterialfv(GL_FRONT, GL_SPECULAR, Verde);
-  glMaterialf(GL_FRONT, GL_SHININESS, 128.0f);
-
-  glPushMatrix();
-  glTranslatef(ball->getXPal(), ball->getYPal(), ball->getZPal());
-  glutSolidSphere(ball->getRaggio(), 31, 31); // ball.draw
+    glTranslatef(ball->getXPal(), ball->getYPal(), ball->getZPal());
+    glutSolidSphere(ball->getRadius(), 31, 31);
   glPopMatrix();
 
-  /* Cubo: materiale giallo matto che emette luce.
-   * La shininess e' la stessa del toro (non e' impostata diversamente) */
-  glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Giallo);
-  glMaterialfv(GL_FRONT, GL_EMISSION, GialloTenue);
-  glMaterialfv(GL_FRONT, GL_SPECULAR, Nero);
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Giallo);
+      glMaterialfv(GL_FRONT, GL_EMISSION, GialloTenue);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, Nero);
 
-  /*Draw fiels*/
-  
-
-//texture applicata al player ma si puo fare anche direttamente nel drawplayer 
-glPushMatrix();
- glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texutre
-  campo.getPlayer(1)->drawPlayer();
-   glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  campo.drawField();
-
- glPopMatrix();
- glDisable(GL_TEXTURE_2D);
-  
-
+  glPushMatrix();
+    glEnable(GL_TEXTURE_2D);
+      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
+	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
+        campo.getPlayer(1)->drawPlayer();
+      glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+	      campo.drawField();
+    glDisable(GL_TEXTURE_2D);
+  glPopMatrix();
 
   //effetto linea che segue la palla
   glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Blu);
   glMaterialfv(GL_FRONT, GL_EMISSION, Blu);
-  glMaterialfv(GL_FRONT, GL_SPECULAR, Blu);
+  glMaterialfv(GL_FRONT, GL_SPECULAR, Rosso);
   glPushMatrix();
     glTranslatef(ball->getXPal(), 0, 0);
     glScalef(0.2, campo.getDimY(), campo.getDimZ()); //0.2 è lo spessore che sto trattando come costante
     glutWireCube(1);
   glPopMatrix();
+  //effetto cerchi sui piani YZ per aiutare a colpire la palla
+  glPushMatrix();
+    glTranslatef(campo.getDimX()/2.0f, ball->getYPal(), ball->getZPal());
+    glRotated(90.0, 0.0, 1.0, 0.0);
+    drawFilledCircle(0.0,0.0,ball->getRadius());
+  glPopMatrix();
+
+  glPushMatrix();
+    glTranslatef(-campo.getDimX()/2.0f, ball->getYPal(), ball->getZPal());
+    glRotated(90.0, 0.0, 1.0, 0.0);
+    drawFilledCircle(0.0,0.0,ball->getRadius());
+  glPopMatrix();
+  /* Disabilita l'illuminazione */
+glDisable(GL_LIGHTING);
+glPopMatrix();
 
 
+/*View second player-----------------------------------------------------------------------------------*/
+glViewport(width*0.5f, 0, width*0.5f, height*0.75f);
+
+glPushMatrix();
+  // Posizione luce legata al punto di vista:
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+    setView(alphaxP2, alphazP2, dist);
+    drawAxis(20.0f);
+
+    glEnable(GL_LIGHTING);
+      glMaterialfv(GL_FRONT, GL_EMISSION, Nero);
+      glMaterialfv(GL_FRONT, GL_AMBIENT, RossoTenue);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, Rosso);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, Verde);
+      glMaterialf(GL_FRONT, GL_SHININESS, 100.0f);
+
+  glPushMatrix();
+    glTranslatef(ball->getXPal(), ball->getYPal(), ball->getZPal());
+    glutSolidSphere(ball->getRadius(), 31, 31);
+  glPopMatrix();
+
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Giallo);
+      glMaterialfv(GL_FRONT, GL_EMISSION, GialloTenue);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, Nero);
+
+  glPushMatrix();
+    glEnable(GL_TEXTURE_2D);
+      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
+	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
+        campo.getPlayer(1)->drawPlayer();
+      glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+	      campo.drawField();
+    glDisable(GL_TEXTURE_2D);
+  glPopMatrix();
+
+  //effetto linea che segue la palla
+  glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Blu);
+  glMaterialfv(GL_FRONT, GL_EMISSION, Blu);
+  glMaterialfv(GL_FRONT, GL_SPECULAR, Rosso);
+  glPushMatrix();
+    glTranslatef(ball->getXPal(), 0, 0);
+    glScalef(0.2, campo.getDimY(), campo.getDimZ()); //0.2 è lo spessore che sto trattando come costante
+    glutWireCube(1);
+  glPopMatrix();
+  //effetto cerchi sui piani YZ per aiutare a colpire la palla
+  glPushMatrix();
+    glTranslatef(campo.getDimX()/2.0f, ball->getYPal(), ball->getZPal());
+    glRotated(90.0, 0.0, 1.0, 0.0);
+    drawFilledCircle(0.0,0.0,ball->getRadius());
+  glPopMatrix();
+
+  glPushMatrix();
+    glTranslatef(-campo.getDimX()/2.0f, ball->getYPal(), ball->getZPal());
+    glRotated(90.0, 0.0, 1.0, 0.0);
+    drawFilledCircle(0.0,0.0,ball->getRadius());
+  glPopMatrix();
   /* Disabilita l'illuminazione */
   glDisable(GL_LIGHTING);
-
   glPopMatrix();
+
+
+  /*Granangolo----------------------------------------------------------------------------------------------*/
+
+  glViewport(0, height*0.75f, width, height);
+  glPushMatrix();
+    setView(90.0f, 90.0f, 40);
+    glRotatef(90.0f, 0,0,1);
+    glScalef(0.5f,0.5f,0.5f);
+    glTranslated(0.0f,0.0f,-50.0f);
+    // Posizione luce legata al punto di vista:
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+    drawAxis(100.0f);
+
+    glEnable(GL_LIGHTING);
+      glMaterialfv(GL_FRONT, GL_EMISSION, Nero);
+      glMaterialfv(GL_FRONT, GL_AMBIENT, RossoTenue);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, Rosso);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, Verde);
+      glMaterialf(GL_FRONT, GL_SHININESS, 100.0f);
+
+  glPushMatrix();
+    glTranslatef(ball->getXPal(), ball->getYPal(), ball->getZPal());
+    glutSolidSphere(ball->getRadius(), 31, 31);
+  glPopMatrix();
+
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Giallo);
+      glMaterialfv(GL_FRONT, GL_EMISSION, GialloTenue);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, Nero);
+
+  glPushMatrix();
+    glEnable(GL_TEXTURE_2D);
+      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
+	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
+        campo.getPlayer(1)->drawPlayer();
+      glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+	      campo.drawField();
+    glDisable(GL_TEXTURE_2D);
+  glPopMatrix();
+
+  //effetto linea che segue la palla
+  glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Blu);
+  glMaterialfv(GL_FRONT, GL_EMISSION, Blu);
+  glMaterialfv(GL_FRONT, GL_SPECULAR, Rosso);
+  glPushMatrix();
+    glTranslatef(ball->getXPal(), 0, 0);
+    glScalef(0.2, campo.getDimY(), campo.getDimZ()); //0.2 è lo spessore che sto trattando come costante
+    glutWireCube(1);
+  glPopMatrix();
+  //effetto cerchi sui piani YZ per aiutare a colpire la palla
+  glPushMatrix();
+    glTranslatef(campo.getDimX()/2.0f, ball->getYPal(), ball->getZPal());
+    glRotated(90.0, 0.0, 1.0, 0.0);
+    drawFilledCircle(0.0,0.0,ball->getRadius());
+  glPopMatrix();
+
+  glPushMatrix();
+    glTranslatef(-campo.getDimX()/2.0f, ball->getYPal(), ball->getZPal());
+    glRotated(90.0, 0.0, 1.0, 0.0);
+    drawFilledCircle(0.0,0.0,ball->getRadius());
+  glPopMatrix();
+  /* Disabilita l'illuminazione */
+glDisable(GL_LIGHTING);
+glPopMatrix();
 
   glutSwapBuffers();
 }
 
 
 
-
-
 /*funzione idle per continuare gli spostamenti fin quando i tasti sono premuti*/
 void idle(){
-  //idle per i tasti asdw   
-  if(keyState['a'])
-    campo.getPlayer(1)->decreaseY(campo.getDimY());
-  if(keyState['s'])
-    campo.getPlayer(1)->decreaseZ(campo.getDimZ());
-  if(keyState['d'])
-    campo.getPlayer(1)->encreaseY(campo.getDimZ());
-  if(keyState['w'])
-    campo.getPlayer(1)->encreaseZ(campo.getDimZ());
+  if(!keyState['p']){
+    //idle per i tasti asdw   
+    if(keyState['a'])
+      campo.getPlayer(1)->decreaseY(campo.getDimY());
+    if(keyState['s'])
+      campo.getPlayer(1)->decreaseZ(campo.getDimZ());
+    if(keyState['d'])
+      campo.getPlayer(1)->encreaseY(campo.getDimZ());
+    if(keyState['w'])
+      campo.getPlayer(1)->encreaseZ(campo.getDimZ());
 
-  if(keyState['t'])
-    campo.getPlayer(2)->encreaseZ(campo.getDimZ());
-  if(keyState['b'])
-    campo.getPlayer(2)->decreaseZ(campo.getDimZ());
-  if(keyState['l'])
-    campo.getPlayer(2)->encreaseY(campo.getDimY());
-  if(keyState['r'])
-    campo.getPlayer(2)->decreaseY(campo.getDimY());
-  glutPostRedisplay();
+    if(keyState['t'])
+      campo.getPlayer(2)->encreaseZ(campo.getDimZ());
+    if(keyState['b'])
+      campo.getPlayer(2)->decreaseZ(campo.getDimZ());
+    if(keyState['l'])
+      campo.getPlayer(2)->encreaseY(campo.getDimY());
+    if(keyState['r'])
+      campo.getPlayer(2)->decreaseY(campo.getDimY());
+    glutPostRedisplay();
+  }
 }
+
+
+void resize(int w, int h){
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION); 
+	glLoadIdentity();
+	gluPerspective(fovy, (GLfloat)w/h, nearClip, farClip);
+	width = w;
+	height = h;
+	glMatrixMode(GL_MODELVIEW); 
+	glLoadIdentity();
+}
+
 
 
 
@@ -692,7 +856,7 @@ int main(int argc, char *argv[])
   glutInitWindowSize(width, height);
 	glutInitWindowPosition(X_POS, Y_POS);
   glutCreateWindow("Pong3d");
-  init();
+  glutReshapeFunc(resize);
   glutIgnoreKeyRepeat(1); //serve a ignorare la ripetizione delle callback dei tasti da tastiera quando sono "tenuti giù" perchè li ho gestito separatamente la pressione e il rilascio
   //attiva callback freccette
   //pressione
@@ -714,6 +878,7 @@ int main(int argc, char *argv[])
   glutMouseFunc(mouse);
   glutMotionFunc(motion);
 
+  init();
   glutMainLoop();
   return (0);
 }
