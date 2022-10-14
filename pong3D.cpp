@@ -5,6 +5,7 @@
 #include<map>
 #include <SOIL/SOIL.h>
 #include<time.h>
+#include<string>
 
 using namespace std;
 
@@ -33,8 +34,16 @@ static GLfloat fovy = 80, aspect = 1, nearClip = 3, farClip = 100;
 static GLfloat dist = 30, alphaxP1 = 90.0, alphazP1 = 91.0, alphaxP2 = 90.0, alphazP2 = -91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
 static GLdouble xStart = 0.0, yStart = 0.0;//per la rotazione con il mouse
 static GLint width = 1200, height = 800;
-static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false},
+static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false}, {' ', false},
 {'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
+string scoreP1;
+string scoreP2;
+
+void writeBitmapString(void* font, string str) {
+    const char* c = str.c_str();
+    const char* cc;
+    for (cc = c; *cc != '\0'; cc++) glutBitmapCharacter(font, *cc);
+}
 
 class Player
 {
@@ -45,6 +54,7 @@ private:
   GLfloat dim;
   GLint score;
   GLfloat step;
+  string name;
 
 public:
   Player(GLfloat d)
@@ -54,11 +64,14 @@ public:
     z = 0;
     dim = d;
     step = 0.1;
+    name = "no_name";
   }
   GLfloat getX() { return x; }
   GLfloat getY() { return y; }
   GLfloat getZ() { return z; }
   GLfloat getStep() { return step; }
+  string getName(){ return name; }
+  void setName(string n){ name = n; }
   void setStep(GLfloat s){ step = s; }
   void setX(GLfloat x) { this->x = x; }
   void setY(GLfloat y) { this->y = y; }
@@ -271,9 +284,9 @@ public:
     xPal = x;
     yPal = y;
     zPal = z;
-    speedX = 0.6;
-    speedY = 0.1;
-    speedZ = 0.3;
+    speedX = 0.0f;
+    speedY = 0.0f;
+    speedZ = 0.0f;
     radius = r;
   }
 
@@ -299,15 +312,15 @@ public:
   static void moveBall(int);
   void moveball(int);
 };
-Ball *ball = new Ball(0, 0, 0, 0.5f);
+Ball *ball = new Ball(0, 0, 0, 0.3f, 0.4f, 0.2f ,0.3f);
 
 //Qui sarebbe giusto passare
 void Ball::moveball(int i) // faccio check collision con bordi e con i player
 {
   glutTimerFunc(50, ball->moveBall, 0);
   xPal = xPal + speedX;
-  yPal = 0;//yPal + speedY;
-  zPal = 0;//zPal + speedZ;
+  yPal = yPal + speedY;
+  zPal = zPal + speedZ;
   // collisione con i player
   if (xPal >= campo.getDimX()/2-ball->getRadius())
   {
@@ -391,10 +404,6 @@ void loadExternalTextures()
 }
 
 
-
-
-
-
 void Player::drawPlayer()
 {
   glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, Nero);
@@ -458,11 +467,6 @@ GLvoid drawAxis(GLfloat lato)
 }
 
 
-
-
-
-
-
 // inizializzazioni
 GLvoid init(GLvoid)
 {
@@ -487,17 +491,12 @@ GLvoid init(GLvoid)
   // Specify how texture values combine with current surface color values. 
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-
-
-
   /* Abilitazione luce 0 */
   glEnable(GL_LIGHT0);
 
   /* Normalizzazione delle normali */
   glEnable(GL_NORMALIZE);
 }
-
-
 
 
 // Callback per la tastiera
@@ -530,9 +529,6 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
     }else{
       ball->setSpeedXYZ(oldSpeedX, oldSpeedY, oldSpeedZ); /*riparte la pallina alla vecchia velocità*/
     }
-    break;
-  case ' ':
-    /*inserire tasto start*/
     break;
   }
   glutPostRedisplay();
@@ -633,6 +629,16 @@ GLvoid drawScene(GLvoid)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   /*View first player*/
   glViewport(0, 0, width * 0.5f, height * 0.75f);
+
+  /*Label Score*/
+  glPushMatrix();
+    setView(0.0f, 0.0f, dist);
+    glColor3f(1.0, 1.0, 1.0);
+    //cout<<"w: "<<width * 0.5f<<" h: "<<height * 0.75f * 0.125f<<endl;
+    glRasterPos3f(-10,22,0);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(1)->getName().append(": ").append(to_string(campo.getPlayer(1)->getScore())));
+  glPopMatrix();
+
   glPushMatrix();
     setView(alphaxP1, alphazP1, dist);
     // Posizione luce legata al punto di vista:
@@ -694,6 +700,14 @@ glPopMatrix();
 
 /*View second player-----------------------------------------------------------------------------------*/
 glViewport(width*0.5f, 0, width*0.5f, height*0.75f);
+/*Label Score*/
+glPushMatrix();
+  setView(0.0f, 0.0f, dist);
+  glColor3f(1.0, 1.0, 1.0);
+  //cout<<"w: "<<width * 0.5f<<" h: "<<height * 0.75f * 0.125f<<endl;
+  glRasterPos3f(-10,22,0);
+  writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName().append(": ").append(to_string(campo.getPlayer(2)->getScore())));
+glPopMatrix();
 
 glPushMatrix();
   // Posizione luce legata al punto di vista:
