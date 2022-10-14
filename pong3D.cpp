@@ -306,13 +306,14 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
 {
   glutTimerFunc(50, ball->moveBall, 0);
   xPal = xPal + speedX;
-  yPal = yPal + speedY;
-  zPal = zPal + speedZ;
+  yPal = 0;//yPal + speedY;
+  zPal = 0;//zPal + speedZ;
   // collisione con i player
-  if (xPal >= campo.getDimX()/2)
+  if (xPal >= campo.getDimX()/2-ball->getRadius())
   {
       myDistance=sqrt(pow(xPal-campo.getPlayer(1)->getX(),2.0)+pow(yPal-campo.getPlayer(1)->getY(),2.0)+pow(zPal-campo.getPlayer(1)->getZ(),2.0));
-        if(myDistance >= ball->getRadius() && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(1)->getDim()*1.4/2,2) ) )
+        if(myDistance >= ball->getRadius()-0.1 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(1)->getDim()*1.4/2,2) ) )
+                                        //tolleranza
           speedX = -speedX; 
         else
         {
@@ -324,10 +325,10 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
         }
   }
 
-  if (xPal <= -campo.getDimX()/2)
+  if (xPal <= -campo.getDimX()/2+ball->getRadius())
   {
       myDistance=sqrt(pow(xPal-campo.getPlayer(2)->getX(),2.0)+pow(yPal-campo.getPlayer(2)->getY(),2.0)+pow(zPal-campo.getPlayer(2)->getZ(),2.0));
-        if(myDistance >= ball->getRadius() && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(2)->getDim()*1.4/2,2) ) )
+        if(myDistance >= ball->getRadius()-0.1 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(2)->getDim()*1.4/2,2) ) )
           speedX = -speedX; 
         else
         {
@@ -400,7 +401,7 @@ void Player::drawPlayer()
   glMaterialfv(GL_FRONT, GL_EMISSION, Verde);
   glMaterialfv(GL_FRONT, GL_SPECULAR, Nero);
   glPushMatrix();
-    glTranslatef(x, y, z);
+    glTranslatef(x, y, z-dim/2); //-dim/2 per centrare i giocatori su z 
     glScalef(0.01, dim, dim); //0.01 è lo spessore che sto trattando come costanteee
     //glutWireCube(1);
     cube(); // definisce il cubo tramite poligoni per le texture 
