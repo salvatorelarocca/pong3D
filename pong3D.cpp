@@ -97,7 +97,7 @@ public:
   }
   void encreaseZ(GLfloat dimFieldZ)
   {
-    if (z + dim +step <= dimFieldZ/2.0f)
+    if (z + dim/2.0f + step <= dimFieldZ/2.0f)
     {
       cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
       z = z + step;
@@ -105,7 +105,7 @@ public:
   }
   void decreaseZ(GLfloat dimFieldZ)
   {
-    if (z -step >= -dimFieldZ/2.0f)
+    if (z - dim/2.0f - step >= -dimFieldZ/2.0f)
     {
       cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
       z = z - step;
@@ -353,7 +353,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
         }
         
   }
-  cout<<"mydistance"<<myDistance<<endl<<endl;
+  //cout<<"mydistance"<<myDistance<<endl<<endl;
   // collisione con il campo
   if (yPal+ball->getRadius() >= campo.getDimY()/2 || yPal-ball->getRadius() <= -campo.getDimY()/2)
   {
@@ -374,31 +374,39 @@ void Ball::moveBall(int i)
 
 
 //serve per caricare texture da immagini con soil
-void loadExternalTextures()			
+void loadExternalTextures(char* tField, char* tP1, char* tP2)			
 {
-  
-  int numeroTexture = 2;
+  int numeroTexture = 3;
   int i = 0;
-  char* filenameTexture[] = {"a.png","fish.png"}; //warning ma non errore e li legge 
+  char* filenameTexture[] = {tField, tP1, tP2}; //le texture con _trasp le carico con l'alpha
 	int width, height, channels;
 	unsigned char *img;
-  while(i<numeroTexture)
+  while( i < numeroTexture)
   {
-	  img = SOIL_load_image
-	  (
-		  filenameTexture[i],
-		  &width, &height, &channels,
-		  SOIL_LOAD_AUTO
-	  );
-	  if (img != NULL) 
+    if(i == 0) // 0 la prima è il campo
     {
-	  	glBindTexture(GL_TEXTURE_2D, texture[i]);
-      // Costruisce le MipMap, eventualmente scalando l'immagine, e specifica le texture 
-		  gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height,
-			GL_RGB, GL_UNSIGNED_BYTE, img);
-
-		  SOIL_free_image_data(img);
-	  }
+      img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
+      cout<<"c:"<<channels<<endl;
+      if (img != NULL) 
+      {
+        glBindTexture(GL_TEXTURE_2D, texture[i]);
+        // Costruisce le MipMap, eventualmente scalando l'immagine, e specifica le texture 
+        // si dovrebbe scalare l'immagine a potenza di due quando non lo è
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, img);
+        SOIL_free_image_data(img);
+      }
+    }else{ // 1 è il player 1 e 2 è il player 2
+      img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
+      cout<<"c:"<<channels<<endl;
+      if (img != NULL) 
+      {
+        glBindTexture(GL_TEXTURE_2D, texture[i]);
+        // Costruisce le MipMap, eventualmente scalando l'immagine, e specifica le texture 
+        // si dovrebbe scalare l'immagine a potenza di due quando non lo è
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, img);
+        SOIL_free_image_data(img);
+      }
+    }
     i++;
   }
 }
@@ -475,7 +483,6 @@ GLvoid init(GLvoid)
 
   /* Uso depth buffer */
   glEnable(GL_DEPTH_TEST);
-
   /* Matrice di proiezione */
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -487,7 +494,7 @@ GLvoid init(GLvoid)
 
   //carico texture esterne con soil
   glGenTextures(1, texture); 
-  loadExternalTextures();
+  loadExternalTextures((char*)"b.png", (char*)"player_trasp.png", (char*)"player_trasp.png");
   // Specify how texture values combine with current surface color values. 
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
@@ -663,11 +670,15 @@ GLvoid drawScene(GLvoid)
 
   glPushMatrix();
     glEnable(GL_TEXTURE_2D);
-      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
-	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
-        campo.getPlayer(1)->drawPlayer();
-      glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        glEnable( GL_BLEND );
+          glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+          glBindTexture(GL_TEXTURE_2D, texture[2]); 
+          campo.getPlayer(2)->drawPlayer();
+          glBindTexture(GL_TEXTURE_2D, texture[1]);
+          campo.getPlayer(1)->drawPlayer();
+        glDisable( GL_BLEND );
+      glBindTexture(GL_TEXTURE_2D, texture[0]); 
 	      campo.drawField();
     glDisable(GL_TEXTURE_2D);
   glPopMatrix();
@@ -733,10 +744,14 @@ glPushMatrix();
 
   glPushMatrix();
     glEnable(GL_TEXTURE_2D);
-      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
 	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glEnable( GL_BLEND );
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+        glBindTexture(GL_TEXTURE_2D, texture[2]);
 	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
+        glBindTexture(GL_TEXTURE_2D, texture[2]);
         campo.getPlayer(1)->drawPlayer();
+        glDisable( GL_BLEND );
       glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
 	      campo.drawField();
     glDisable(GL_TEXTURE_2D);
