@@ -34,10 +34,11 @@ static GLfloat fovy = 80, aspect = 1, nearClip = 3, farClip = 100;
 static GLfloat dist = 30, alphaxP1 = 90.0, alphazP1 = 91.0, alphaxP2 = 90.0, alphazP2 = -91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
 static GLdouble xStart = 0.0, yStart = 0.0;//per la rotazione con il mouse
 static GLint width = 1200, height = 800;
-static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false}, {' ', false},
+static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false}, {' ', true},
 {'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
 string scoreP1;
 string scoreP2;
+bool scoredP1 = false, scoredP2 = false;
 
 void writeBitmapString(void* font, string str) {
     const char* c = str.c_str();
@@ -84,14 +85,14 @@ public:
   void encreaseY(GLfloat dimFieldY)
   {
     if (y + dim/2.0f + step <= dimFieldY/2.0f){ //sottraggo o sommo step altrimenti esce
-      cout<<"y:"<<y<<" dimFieldy:"<<dimFieldY/2.0f<<endl;
+      //cout<<"y:"<<y<<" dimFieldy:"<<dimFieldY/2.0f<<endl;
       y = y + step;
     }
   }
   void decreaseY(GLfloat dimFieldY)
   {
     if (y - dim/2.0f - step >= -dimFieldY/2){
-      cout<<"y:"<<y<<" dimFieldy:"<<dimFieldY/2.0f<<endl;
+      //cout<<"y:"<<y<<" dimFieldy:"<<dimFieldY/2.0f<<endl;
       y = y - step;
     }
   }
@@ -99,7 +100,7 @@ public:
   {
     if (z + dim/2.0f + step <= dimFieldZ/2.0f)
     {
-      cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
+      //cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
       z = z + step;
     }
   }
@@ -107,7 +108,7 @@ public:
   {
     if (z - dim/2.0f - step >= -dimFieldZ/2.0f)
     {
-      cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
+      //cout<<"z:"<<z<<" dim: "<<dimFieldZ/2.0f<<endl;
       z = z - step;
     }
   }
@@ -260,6 +261,12 @@ class Ball
 {
 private:
   GLfloat xPal, yPal, zPal; // coordiate pallina
+  GLfloat speedXact;
+  GLfloat speedYact;
+  GLfloat speedZact;
+  GLfloat speedXprc;
+  GLfloat speedYprc;
+  GLfloat speedZprc;
   GLfloat speedX;
   GLfloat speedY;
   GLfloat speedZ;
@@ -272,21 +279,15 @@ public:
     xPal = x;
     yPal = y;
     zPal = z;
-    speedX = sx;
+    speedXprc = 0.0f; // la ball nasce con una velocità precedente sempre nulla
+    speedYprc = 0.0f;
+    speedZprc = 0.0f;
+    speedXact = 0.0f; // velocità attuale
+    speedYact = 0.0f;
+    speedZact = 0.0f;
+    speedX = sx; // velocità della pallina
     speedY = sy;
     speedZ = sz;
-    radius = r;
-  }
-
-  Ball(GLfloat x, GLfloat y, GLfloat z, GLfloat r)
-  {
-    srand(time(NULL));
-    xPal = x;
-    yPal = y;
-    zPal = z;
-    speedX = 0.0f;
-    speedY = 0.0f;
-    speedZ = 0.0f;
     radius = r;
   }
 
@@ -299,15 +300,34 @@ public:
   void setRadius(GLfloat r ) { radius = r;}
   GLfloat getRadius(){ return radius; }
 
-  void setSpeedXYZ(GLfloat sX, GLfloat sY, GLfloat sZ){
+  void setSpeedXYZact(GLfloat sX, GLfloat sY, GLfloat sZ){
+    speedXprc = speedXact; //salviamo la velocità precendente prima di impostare quella attuale
+    speedYprc = speedYact;
+    speedZprc = speedZact;
+    speedXact = sX;
+    speedYact = sY;
+    speedZact = sZ;
+  }
+
+  void chageSpeedvector(GLfloat sX, GLfloat sY, GLfloat sZ){ // cambio vettore della velocità 
     speedX = sX;
     speedY = sY;
     speedZ = sZ;
   }
 
-  GLfloat getSpeedX(){ return speedX; }
-  GLfloat getSpeedY(){ return speedY; }
-  GLfloat getSpeedZ(){ return speedZ; }
+  void setSpeedXYZ(){ // setto la velocià a quella attuale per farla muovere quando nasce inizialmente è ferma
+    speedXact = speedX;
+    speedYact = speedY;
+    speedZact = speedZ;
+  }
+
+  GLfloat getSpeedXact(){ return speedXact; }
+  GLfloat getSpeedYact(){ return speedYact; }
+  GLfloat getSpeedZact(){ return speedZact; }
+  GLfloat getSpeedXprc(){ return speedXprc; }
+  GLfloat getSpeedYprc(){ return speedYprc; }
+  GLfloat getSpeedZprc(){ return speedZprc; }
+
 
   static void moveBall(int);
   void moveball(int);
@@ -318,16 +338,16 @@ Ball *ball = new Ball(0, 0, 0, 0.3f, 0.4f, 0.2f ,0.3f);
 void Ball::moveball(int i) // faccio check collision con bordi e con i player
 {
   glutTimerFunc(50, ball->moveBall, 0);
-  xPal = xPal + speedX;
-  yPal = yPal + speedY;
-  zPal = zPal + speedZ;
+  xPal = xPal + speedXact;
+  yPal = yPal + speedYact;
+  zPal = zPal + speedZact;
   // collisione con i player
   if (xPal >= campo.getDimX()/2-ball->getRadius())
   {
       myDistance=sqrt(pow(xPal-campo.getPlayer(1)->getX(),2.0)+pow(yPal-campo.getPlayer(1)->getY(),2.0)+pow(zPal-campo.getPlayer(1)->getZ(),2.0));
         if(myDistance >= ball->getRadius()-0.1 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(1)->getDim()*1.4/2,2) ) )
                                         //tolleranza
-          speedX = -speedX; 
+          speedXact = -speedXact; 
         else
         {
       // aumento score
@@ -335,6 +355,9 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           yPal = 0;
           zPal = 0;
           campo.getPlayer(2)->encreseScore();
+          scoredP2 = true;
+          keyState[' '] = !keyState[' '];
+          ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
         }
   }
 
@@ -342,26 +365,28 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   {
       myDistance=sqrt(pow(xPal-campo.getPlayer(2)->getX(),2.0)+pow(yPal-campo.getPlayer(2)->getY(),2.0)+pow(zPal-campo.getPlayer(2)->getZ(),2.0));
         if(myDistance >= ball->getRadius()-0.1 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(2)->getDim()*1.4/2,2) ) )
-          speedX = -speedX; 
+          speedXact = -speedXact; 
         else
         {
-      // aumento score
+        // aumento score
           xPal = 0;
           yPal = 0;
           zPal = 0;
           campo.getPlayer(1)->encreseScore();
+          scoredP1 = true;
+          keyState[' '] = !keyState[' '];
+          ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
         }
-        
   }
   //cout<<"mydistance"<<myDistance<<endl<<endl;
   // collisione con il campo
   if (yPal+ball->getRadius() >= campo.getDimY()/2 || yPal-ball->getRadius() <= -campo.getDimY()/2)
   {
-    speedY = -speedY;
+    speedYact = -speedYact;
   }
   if (zPal+ball->getRadius() >= campo.getDimZ()/2 || zPal-ball->getRadius() <= -campo.getDimZ()/2)
   {
-    speedZ = -speedZ;
+    speedZact = -speedZact;
   }
 
   glutPostRedisplay();
@@ -386,7 +411,6 @@ void loadExternalTextures(char* tField, char* tP1, char* tP2)
     if(i == 0) // 0 la prima è il campo
     {
       img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
-      cout<<"c:"<<channels<<endl;
       if (img != NULL) 
       {
         glBindTexture(GL_TEXTURE_2D, texture[i]);
@@ -397,7 +421,6 @@ void loadExternalTextures(char* tField, char* tP1, char* tP2)
       }
     }else{ // 1 è il player 1 e 2 è il player 2
       img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
-      cout<<"c:"<<channels<<endl;
       if (img != NULL) 
       {
         glBindTexture(GL_TEXTURE_2D, texture[i]);
@@ -494,7 +517,7 @@ GLvoid init(GLvoid)
 
   //carico texture esterne con soil
   glGenTextures(1, texture); 
-  loadExternalTextures((char*)"b.png", (char*)"player_trasp.png", (char*)"player_trasp.png");
+  loadExternalTextures((char*)"b.png", (char*)"player_trasp.png", (char*)"player2.png");
   // Specify how texture values combine with current surface color values. 
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
@@ -509,7 +532,7 @@ GLvoid init(GLvoid)
 // Callback per la tastiera
 GLvoid inputKey(GLubyte key, GLint x, GLint y)
 {
-  static GLfloat oldSpeedX, oldSpeedY, oldSpeedZ;
+  cout<<"start: "<<keyState[' ']<<" pause: "<<keyState['p']<<endl;
   switch (key)
   {
   case KEY_ESC:
@@ -527,15 +550,19 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
     keyState['s'] = true;
     break;
   case 'p': //tasto pause
-    keyState['p'] = !keyState['p'];
-    if(keyState['p']){
-      oldSpeedX = ball->getSpeedX(); /*salvo la velocità*/
-      oldSpeedY = ball->getSpeedY();
-      oldSpeedZ = ball->getSpeedZ();
-      ball->setSpeedXYZ(0.0f, 0.0f, 0.0f); /*fermo la pallina*/
-    }else{
-      ball->setSpeedXYZ(oldSpeedX, oldSpeedY, oldSpeedZ); /*riparte la pallina alla vecchia velocità*/
+    if(!keyState[' ']){
+      keyState['p'] = !keyState['p'];
+      if(keyState['p'])
+        ball->setSpeedXYZact(0.0f, 0.0f, 0.0f); /*fermo la pallina*/
+      else
+        ball->setSpeedXYZact(ball->getSpeedXprc(), ball->getSpeedYprc(), ball->getSpeedZprc()); /*riparte la pallina alla vecchia velocità*/
     }
+    break;
+  case ' ':
+      keyState[' '] = !keyState[' '];
+      if(!keyState[' '])
+        ball->setSpeedXYZ();
+        /*Conteggio e notifica score*/
     break;
   }
   glutPostRedisplay();
@@ -636,20 +663,22 @@ GLvoid drawScene(GLvoid)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   /*View first player*/
   glViewport(0, 0, width * 0.5f, height * 0.75f);
-
   /*Label Score*/
   glPushMatrix();
     setView(0.0f, 0.0f, dist);
     glColor3f(1.0, 1.0, 1.0);
     //cout<<"w: "<<width * 0.5f<<" h: "<<height * 0.75f * 0.125f<<endl;
     glRasterPos3f(-10,22,0);
-    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(1)->getName().append(": ").append(to_string(campo.getPlayer(1)->getScore())));
+    if(scoredP1 == false)
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(1)->getName().append(": ").append(to_string(campo.getPlayer(1)->getScore())));
+    else
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
   glPopMatrix();
 
   glPushMatrix();
-    setView(alphaxP1, alphazP1, dist);
     // Posizione luce legata al punto di vista:
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+    setView(alphaxP1, alphazP1, dist);
     drawAxis(20.0f);
 
     glEnable(GL_LIGHTING);
@@ -658,7 +687,7 @@ GLvoid drawScene(GLvoid)
       glMaterialfv(GL_FRONT, GL_DIFFUSE, Rosso);
       glMaterialfv(GL_FRONT, GL_SPECULAR, Verde);
       glMaterialf(GL_FRONT, GL_SHININESS, 100.0f);
-
+    
   glPushMatrix();
     glTranslatef(ball->getXPal(), ball->getYPal(), ball->getZPal());
     glutSolidSphere(ball->getRadius(), 31, 31);
@@ -671,7 +700,7 @@ GLvoid drawScene(GLvoid)
   glPushMatrix();
     glEnable(GL_TEXTURE_2D);
 	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-        glEnable( GL_BLEND );
+          glEnable( GL_BLEND );
           glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
           glBindTexture(GL_TEXTURE_2D, texture[2]); 
           campo.getPlayer(2)->drawPlayer();
@@ -717,7 +746,10 @@ glPushMatrix();
   glColor3f(1.0, 1.0, 1.0);
   //cout<<"w: "<<width * 0.5f<<" h: "<<height * 0.75f * 0.125f<<endl;
   glRasterPos3f(-10,22,0);
-  writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName().append(": ").append(to_string(campo.getPlayer(2)->getScore())));
+  if(!scoredP2)
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName().append(": ").append(to_string(campo.getPlayer(2)->getScore())));
+  else
+     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
 glPopMatrix();
 
 glPushMatrix();
@@ -749,7 +781,7 @@ glPushMatrix();
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         glBindTexture(GL_TEXTURE_2D, texture[2]);
 	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
-        glBindTexture(GL_TEXTURE_2D, texture[2]);
+        glBindTexture(GL_TEXTURE_2D, texture[1]);
         campo.getPlayer(1)->drawPlayer();
         glDisable( GL_BLEND );
       glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
@@ -786,14 +818,21 @@ glPushMatrix();
   /*Granangolo----------------------------------------------------------------------------------------------*/
 
   glViewport(0, height*0.75f, width, height);
+
   glPushMatrix();
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
     setView(90.0f, 90.0f, 40);
     glRotatef(90.0f, 0,0,1);
     glScalef(0.5f,0.5f,0.5f);
     glTranslated(0.0f,0.0f,-50.0f);
+    glColor3f(1.0f, 1.0f, 0.0f);
+    glRasterPos3f(60, 6, 0);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "LEGEND");
+    glRasterPos3f(55,0, 0);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "p = PAUSE");
+    glRasterPos3f(50, -5, 0);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "space = START");
     // Posizione luce legata al punto di vista:
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-    drawAxis(100.0f);
 
     glEnable(GL_LIGHTING);
       glMaterialfv(GL_FRONT, GL_EMISSION, Nero);
@@ -890,6 +929,16 @@ void resize(int w, int h){
 }
 
 
+void labelPopUp(int endLoop){
+  static int i = 0;
+  glutTimerFunc(50, labelPopUp, endLoop);
+  if(i > endLoop){
+    if(scoredP1) scoredP1 = false;
+    if(scoredP2) scoredP2 = false;
+    i = 0;
+  }
+  i++;
+}
 
 
 int main(int argc, char *argv[])
@@ -917,6 +966,8 @@ int main(int argc, char *argv[])
   glutIdleFunc(idle);
 
   glutDisplayFunc(drawScene);
+
+  glutTimerFunc(50, labelPopUp, 50);
   glutTimerFunc(50, ball->moveBall, 0);
 
   glutMouseFunc(mouse);
