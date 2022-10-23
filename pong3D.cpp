@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
@@ -6,10 +7,12 @@
 #include <SOIL/SOIL.h>
 #include<time.h>
 #include<string>
+#include<vector>
 
 using namespace std;
 
 #define KEY_ESC 27
+#define BACKSPACE 8
 #define X_POS 50
 #define Y_POS 50
 
@@ -24,12 +27,12 @@ GLfloat RossoTenue[] = {0.3f, 0.1f, 0.1f, 1.0f};
 GLfloat BluTenue[] = {0.1f, 0.1f, 0.3f, 1.0f};
 GLfloat GialloTenue[] = {0.6f, 0.6f, 0.0f, 1.0f};
 GLfloat myDistance;
-static unsigned int texture[2]; // Array of texture indices. Serve ad indicare l indice della texture 
+static unsigned int texture[4]; // Array of texture indices. Serve ad indicare l indice della texture 
 
 
 GLfloat lightPosition[] = {0.0f, 0.0f, 1.0f, 0.0f};
 // Parametri per gluPerspective
-static GLfloat fovy = 80, aspect = 1, nearClip = 3, farClip = 100;
+static GLfloat fovy = 80, aspect = 1, nearClipPrp = 3, farClipPrs = 100, nearClipOrt = 10, farClipOrt = 100;
 // Parametri per il punto di vista
 static GLfloat dist = 30, alphaxP1 = 90.0, alphazP1 = 91.0, alphaxP2 = 90.0, alphazP2 = -91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
 static GLdouble xStart = 0.0, yStart = 0.0;//per la rotazione con il mouse
@@ -38,7 +41,7 @@ static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w
 {'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
 string scoreP1;
 string scoreP2;
-bool scoredP1 = false, scoredP2 = false;
+bool scoredP1 = false, scoredP2 = false, inMenu = true, insNameP1 = false, insNameP2 = false;
 
 void writeBitmapString(void* font, string str) {
     const char* c = str.c_str();
@@ -65,7 +68,7 @@ public:
     z = 0;
     dim = d;
     step = 0.1;
-    name = "no_name";
+    name = "";
   }
   GLfloat getX() { return x; }
   GLfloat getY() { return y; }
@@ -232,8 +235,6 @@ public:
   
 	cubebase();
   glPopMatrix();
-  
-
   }
 
   GLfloat getDimX(){ return dimX; }
@@ -399,37 +400,35 @@ void Ball::moveBall(int i)
 
 
 //serve per caricare texture da immagini con soil
-void loadExternalTextures(char* tField, char* tP1, char* tP2)			
+void loadExternalTextures(char* menu, char* tField, char* tP1, char* tP2)			
 {
-  int numeroTexture = 3;
+  int numeroTexture = 4;
   int i = 0;
-  char* filenameTexture[] = {tField, tP1, tP2}; //le texture con _trasp le carico con l'alpha
-	int width, height, channels;
+  char* filenameTexture[] = {menu, tField, tP1, tP2};
+  int width, height, channels;
 	unsigned char *img;
-  while( i < numeroTexture)
+  while( i < numeroTexture )
   {
-    if(i == 0) // 0 la prima è il campo
+    if(i < 1) // menu e campo in RGB
     {
       img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
       if (img != NULL) 
       {
         glBindTexture(GL_TEXTURE_2D, texture[i]);
-        // Costruisce le MipMap, eventualmente scalando l'immagine, e specifica le texture 
-        // si dovrebbe scalare l'immagine a potenza di due quando non lo è
         gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, img);
         SOIL_free_image_data(img);
       }
-    }else{ // 1 è il player 1 e 2 è il player 2
+    }else{ // player 1  player 2 RGBA
       img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
       if (img != NULL) 
       {
         glBindTexture(GL_TEXTURE_2D, texture[i]);
-        // Costruisce le MipMap, eventualmente scalando l'immagine, e specifica le texture 
-        // si dovrebbe scalare l'immagine a potenza di due quando non lo è
         gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, width, height, GL_RGBA, GL_UNSIGNED_BYTE, img);
         SOIL_free_image_data(img);
       }
     }
+    cout<<filenameTexture[i]<<" "; 
+    cout<<width<<" "<<height<<" "<<channels<<endl;
     i++;
   }
 }
@@ -460,6 +459,27 @@ GLvoid mouse(GLint button, GLint state, GLint x, GLint y)
       yStart = y;
     }
   }
+  if(inMenu)
+  {
+    //controllo hit riquadro per l'inserimento del primo nome
+    if(x > width/100.0f*12.0f && x < width/100.0f*37.0f && height - y > height - height/100.0f*42.5f && height -y < height - height/100.0f*32.0f)
+      insNameP1 = true;
+    else
+      insNameP1 = false;
+    //controllo hit secondo riquadro
+    if(x > width/100.0f*12.0f && x < width/100.0f*37.0f && height - y > height - height/100.0f*60.0f && height -y < height - height/100.0f*50.0f)
+      insNameP2 = true;
+    else
+      insNameP2 = false;
+    //controllo hit tasto start
+    cout<<x<<" "<<y<<endl;
+    if(x > width/100.0f*38.0f && x < width/100.0f*63.0f && height - y > height - height/100.0f*94.0f && height -y < height - height/100.0f*85.0f)
+      inMenu = false;
+    else
+      inMenu = true;
+  }
+    
+  
 }
 
 // Movimento del mouse
@@ -501,30 +521,20 @@ GLvoid drawAxis(GLfloat lato)
 // inizializzazioni
 GLvoid init(GLvoid)
 {
-  /* Stabilisce il colore dello sfondo */
   glClearColor(0.0, 0.0, 0.0, 1.0);
-
-  /* Uso depth buffer */
   glEnable(GL_DEPTH_TEST);
-  /* Matrice di proiezione */
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective(fovy, (GLfloat)width/height, nearClip, farClip);
-  /* Matrice di ModelView */
+  glOrtho(-width/2.0f, -height/2.0f, width, height, nearClipOrt, farClipOrt);
   glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
 
-
-
-  //carico texture esterne con soil
   glGenTextures(1, texture); 
-  loadExternalTextures((char*)"b.png", (char*)"player_trasp.png", (char*)"player2.png");
-  // Specify how texture values combine with current surface color values. 
+  loadExternalTextures((char*)"menu.jpg", (char*)"field.png", (char*)"player1.png", (char*)"player2.png");
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-  /* Abilitazione luce 0 */
   glEnable(GL_LIGHT0);
 
-  /* Normalizzazione delle normali */
   glEnable(GL_NORMALIZE);
 }
 
@@ -559,10 +569,11 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
     }
     break;
   case ' ':
+    if(!inMenu){
       keyState[' '] = !keyState[' '];
       if(!keyState[' '])
-        ball->setSpeedXYZ();
-        /*Conteggio e notifica score*/
+        ball->setSpeedXYZ(); //bugstart
+    }
     break;
   }
   glutPostRedisplay();
@@ -592,28 +603,27 @@ void specialKeyInput(int key, int _x, int _y)
 }
 
 void specialKeyUpInput(int key, int _x, int _y){
-  switch (key)
-  {
-  case GLUT_KEY_UP:
-    keyState['t'] = false; //top
-    break;
-  case GLUT_KEY_DOWN:
-    keyState['b'] = false; //bottom
-    break;
-  case GLUT_KEY_LEFT:
-    keyState['l'] = false; //left
-    break;
-  case GLUT_KEY_RIGHT:
-    keyState['r'] = false; //right
-    break;
-  default:
-    break;
-  }
+    switch (key)
+    {
+    case GLUT_KEY_UP:
+      keyState['t'] = false; //top
+      break;
+    case GLUT_KEY_DOWN:
+      keyState['b'] = false; //bottom
+      break;
+    case GLUT_KEY_LEFT:
+      keyState['l'] = false; //left
+      break;
+    case GLUT_KEY_RIGHT:
+      keyState['r'] = false; //right
+      break;
+    default:
+      break;
+    }
 }
 
 void inputKeyup(unsigned char key, int x, int y){
-   switch (key)
-  {
+  switch (key){
   case KEY_ESC:
     exit(0);
   case 'a':
@@ -628,6 +638,23 @@ void inputKeyup(unsigned char key, int x, int y){
   case 's':
     keyState['s'] = false;
     break;
+  }
+  if(inMenu){
+    if(insNameP1){
+      if(key == BACKSPACE){ //backspace per cancellare
+        campo.getPlayer(1)->setName(campo.getPlayer(1)->getName().erase(campo.getPlayer(1)->getName().size()-1));
+      }else{
+        campo.getPlayer(1)->setName(campo.getPlayer(1)->getName() + (char)key);
+      }
+    }
+    if(insNameP2){
+      if(key == BACKSPACE){ //backspace per cancellare
+        campo.getPlayer(2)->setName(campo.getPlayer(2)->getName().erase(campo.getPlayer(2)->getName().size()-1));
+      }else{
+        campo.getPlayer(2)->setName(campo.getPlayer(2)->getName() + (char)key);
+      }
+    }
+    glutPostRedisplay();
   }
 }
 
@@ -661,6 +688,15 @@ void drawFilledCircle(GLfloat x, GLfloat y, GLfloat radius){
 GLvoid drawScene(GLvoid)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  if(!inMenu){
+  glEnable(GL_DEPTH_TEST);
+  /*Impostazione vista prospettica quando siamo nel gioco*/
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(fovy, (GLfloat)width/height, nearClipPrp, farClipPrs);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
   /*View first player*/
   glViewport(0, 0, width * 0.5f, height * 0.75f);
   /*Label Score*/
@@ -702,12 +738,12 @@ GLvoid drawScene(GLvoid)
 	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
           glEnable( GL_BLEND );
           glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-          glBindTexture(GL_TEXTURE_2D, texture[2]); 
+          glBindTexture(GL_TEXTURE_2D, texture[3]); 
           campo.getPlayer(2)->drawPlayer();
-          glBindTexture(GL_TEXTURE_2D, texture[1]);
+          glBindTexture(GL_TEXTURE_2D, texture[2]);
           campo.getPlayer(1)->drawPlayer();
         glDisable( GL_BLEND );
-      glBindTexture(GL_TEXTURE_2D, texture[0]); 
+      glBindTexture(GL_TEXTURE_2D, texture[1]); 
 	      campo.drawField();
     glDisable(GL_TEXTURE_2D);
   glPopMatrix();
@@ -734,14 +770,14 @@ GLvoid drawScene(GLvoid)
     drawFilledCircle(0.0,0.0,ball->getRadius());
   glPopMatrix();
   /* Disabilita l'illuminazione */
-glDisable(GL_LIGHTING);
-glPopMatrix();
+  glDisable(GL_LIGHTING);
+  glPopMatrix();
 
 
-/*View second player-----------------------------------------------------------------------------------*/
-glViewport(width*0.5f, 0, width*0.5f, height*0.75f);
-/*Label Score*/
-glPushMatrix();
+  /*View second player-----------------------------------------------------------------------------------*/
+  glViewport(width*0.5f, 0, width*0.5f, height*0.75f);
+  /*Label Score*/
+  glPushMatrix();
   setView(0.0f, 0.0f, dist);
   glColor3f(1.0, 1.0, 1.0);
   //cout<<"w: "<<width * 0.5f<<" h: "<<height * 0.75f * 0.125f<<endl;
@@ -750,9 +786,9 @@ glPushMatrix();
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName().append(": ").append(to_string(campo.getPlayer(2)->getScore())));
   else
      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
-glPopMatrix();
+  glPopMatrix();
 
-glPushMatrix();
+  glPushMatrix();
   // Posizione luce legata al punto di vista:
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
     setView(alphaxP2, alphazP2, dist);
@@ -779,12 +815,12 @@ glPushMatrix();
 	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glEnable( GL_BLEND );
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        glBindTexture(GL_TEXTURE_2D, texture[2]);
+        glBindTexture(GL_TEXTURE_2D, texture[3]);
 	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
+        glBindTexture(GL_TEXTURE_2D, texture[2]);
         campo.getPlayer(1)->drawPlayer();
         glDisable( GL_BLEND );
-      glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
 	      campo.drawField();
     glDisable(GL_TEXTURE_2D);
   glPopMatrix();
@@ -852,11 +888,11 @@ glPushMatrix();
 
   glPushMatrix();
     glEnable(GL_TEXTURE_2D);
-      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
+      glBindTexture(GL_TEXTURE_2D, texture[3]); //array di texture caricate con loadExternal()
 	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
         campo.getPlayer(1)->drawPlayer();
-      glBindTexture(GL_TEXTURE_2D, texture[0]); //array di texture caricate con loadExternal()
+      glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
 	      campo.drawField();
     glDisable(GL_TEXTURE_2D);
   glPopMatrix();
@@ -882,10 +918,51 @@ glPushMatrix();
     glRotated(90.0, 0.0, 1.0, 0.0);
     drawFilledCircle(0.0,0.0,ball->getRadius());
   glPopMatrix();
-  /* Disabilita l'illuminazione */
-glDisable(GL_LIGHTING);
-glPopMatrix();
+  glDisable(GL_LIGHTING);
+  glPopMatrix();
+  }else{
+    glViewport(0, 0, width, height);
+    glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0f, width, 0.0f, height, nearClipOrt, farClipOrt);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glEnable(GL_DEPTH_TEST); //prova a non abilitarlo
+    setView(0.0, 0.0, dist);
+    //d'attivare al click di certe aree del menù che devono essere in funzione di width e height per essere responsive al resize
+    //label inserimento nome primo player
+    // IMPORTANTE lo (0,0) per questa vista è in basso a sinistra per rendere più semplice l'individuazioni di aree del menu
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos3f(width/100.0f*14.0f, height - height/100.0f*39.2f, 0.0f); //posizione 14% width 39.2%height 
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(1)->getName());
+    //label inserimento nome secondo giocatore
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos3f(width/100.0f*14.0f, height - height/100.0f*56.0f, 0.0f);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName());
+        glEnable(GL_TEXTURE_2D);
+              glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+              glBindTexture(GL_TEXTURE_2D, texture[0]);
+              glBegin(GL_POLYGON);
+                glTexCoord2f(0.0, 0.0);
+                glVertex3d(0.0f, height, 0.0f);
 
+                glTexCoord2f(0.0, 1.0);
+                glVertex3d(0.0f, 0.0f, 0.0f);
+
+                glTexCoord2f(1.0, 1.0);
+                glVertex3d(width, 0.0f, 0.0f);
+
+                glTexCoord2f(1.0, 0);
+                glVertex3d(width, height, 0.0f);
+
+              glEnd();
+        glDisable(GL_TEXTURE_2D);
+      
+      glPopMatrix();
+    glPopMatrix();
+  }
+  glutPostRedisplay();
   glutSwapBuffers();
 }
 
@@ -921,8 +998,11 @@ void resize(int w, int h){
 	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION); 
 	glLoadIdentity();
-	gluPerspective(fovy, (GLfloat)w/h, nearClip, farClip);
-	width = w;
+  if(inMenu)
+	  gluPerspective(fovy, (GLfloat)w/h, nearClipPrp, farClipPrs);
+	else
+    glOrtho(-width/2.0f, -height/2.0f, width, height, nearClipOrt, farClipOrt);
+  width = w;
 	height = h;
 	glMatrixMode(GL_MODELVIEW); 
 	glLoadIdentity();
@@ -973,6 +1053,8 @@ int main(int argc, char *argv[])
   glutMouseFunc(mouse);
   glutMotionFunc(motion);
 
+  glewExperimental = GL_TRUE;
+  glewInit();
   init();
   glutMainLoop();
   return (0);
