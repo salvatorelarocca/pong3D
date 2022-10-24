@@ -47,8 +47,8 @@ static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w
 {'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
 string scoreP1;
 string scoreP2;
-bool scoredP1 = false, scoredP2 = false, inMenu = true, insNameP1 = false, insNameP2 = false;
-GLfloat xv = 0.0f, yv = 0.0f, zv = 0.0f;
+bool scoredP1 = false, scoredP2 = false, inMenu = true, insNameP1 = false, insNameP2 = false, flagWin1 = false, flagWin2 = false;
+GLfloat xv = 0.30f, yv = 0.22f, zv = 0.15f;
 
 void writeBitmapString(void* font, string str) {
     const char* c = str.c_str();
@@ -89,7 +89,7 @@ public:
   void setZ(GLfloat z) { this->z = z; }
   GLfloat getDim() { return dim; }
 
-  void encreseScore() { score++; }
+  void encreaseScore() { score++; }
   int getScore() { return score; }
   /*movimento player sul piano YZ*/
   void encreaseY(GLfloat dimFieldY)
@@ -353,40 +353,44 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   if (xPal >= campo.getDimX()/2-ball->getRadius())
   {
       myDistance=sqrt(pow(xPal-campo.getPlayer(1)->getX(),2.0)+pow(yPal-campo.getPlayer(1)->getY(),2.0)+pow(zPal-campo.getPlayer(1)->getZ(),2.0));
-        if(myDistance >= ball->getRadius()-0.1 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(1)->getDim()*1.4/2,2) ) )
+        if(myDistance >= ball->getRadius()-0.5 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(1)->getDim()*1.4/2,2) ) )
                                         //tolleranza
-          speedXact = -speedXact; 
+          speedXact = (speedXact+0.1)*(-1);
         else
         {
       // aumento score
           xPal = 0;
           yPal = 0;
           zPal = 0;
-          campo.getPlayer(2)->encreseScore();
+          campo.getPlayer(2)->encreaseScore();
           scoredP2 = true;
           keyState[' '] = false;
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
+          if(campo.getPlayer(2)->getScore() == 5)
+            flagWin2 = true;
         }
   }
 
   if (xPal <= -campo.getDimX()/2+ball->getRadius())
   {
       myDistance=sqrt(pow(xPal-campo.getPlayer(2)->getX(),2.0)+pow(yPal-campo.getPlayer(2)->getY(),2.0)+pow(zPal-campo.getPlayer(2)->getZ(),2.0));
-        if(myDistance >= ball->getRadius()-0.1 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(2)->getDim()*1.4/2,2) ) )
-          speedXact = -speedXact; 
+        if(myDistance >= ball->getRadius()-0.5 && myDistance <= sqrt(   pow(ball->getRadius(),2.0) + pow(campo.getPlayer(2)->getDim()*1.4/2,2) ) )
+          speedXact = (speedXact-0.1)*(-1);
         else
         {
         // aumento score
           xPal = 0;
           yPal = 0;
           zPal = 0;
-          campo.getPlayer(1)->encreseScore();
+          campo.getPlayer(1)->encreaseScore();
           scoredP1 = true;
           keyState[' '] = false;
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
+          if(campo.getPlayer(1)->getScore() == 5)
+            flagWin2 = true;
         }
   }
-  //cout<<"mydistance"<<myDistance<<endl<<endl;
+  
   // collisione con il campo
   if (yPal+ball->getRadius() >= campo.getDimY()/2 || yPal-ball->getRadius() <= -campo.getDimY()/2)
   {
@@ -396,7 +400,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   {
     speedZact = -speedZact;
   }
-
+  cout<<speedXact<<endl;
   glutPostRedisplay();
 }
 
@@ -574,8 +578,11 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
   case KEY_ESC:
   if(inMenu)
     exit(0);
-  else
-    inMenu = !inMenu;
+  else{
+    inMenu = !inMenu; //vai al menu
+    keyState['p'] = true; //metti in pausa azzerando la velocità attuale
+    ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
+  }
   break;
   case 'a':
     keyState['a'] = true;
@@ -743,6 +750,10 @@ GLvoid drawScene(GLvoid)
       writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(1)->getName().append(": ").append(to_string(campo.getPlayer(1)->getScore())));
     else
       writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
+    if(flagWin1)
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, " : WIN!!!");
+    if(flagWin2)
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, " : LOSE!!!");
   glPopMatrix();
 
   glPushMatrix();
@@ -820,6 +831,10 @@ GLvoid drawScene(GLvoid)
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName().append(": ").append(to_string(campo.getPlayer(2)->getScore())));
   else
      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
+  if(flagWin2)
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "WIN!!!");
+  if(flagWin1)
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "LOSE!!!");
   glPopMatrix();
 
   glPushMatrix();
@@ -1010,6 +1025,8 @@ GLvoid drawScene(GLvoid)
       glPopMatrix();
     glPopMatrix();
   }
+
+
   glutPostRedisplay();
   glutSwapBuffers();
 }
