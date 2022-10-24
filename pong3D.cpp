@@ -1,5 +1,11 @@
+//sudo apt-get install libglew-dev
+//sudo apt-get install libsoil-dev
+//sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
+//g++ pong3D.cpp -o pong3D -lglut -lGLU -lGL -lSOIL -lGLEW -lSOIL
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <GL/freeglut.h>
+
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
@@ -37,11 +43,12 @@ static GLfloat fovy = 80, aspect = 1, nearClipPrp = 3, farClipPrs = 100, nearCli
 static GLfloat dist = 30, alphaxP1 = 90.0, alphazP1 = 91.0, alphaxP2 = 90.0, alphazP2 = -91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
 static GLdouble xStart = 0.0, yStart = 0.0;//per la rotazione con il mouse
 static GLint width = 1200, height = 800;
-static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false}, {' ', true},
+static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false}, {' ', false},
 {'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
 string scoreP1;
 string scoreP2;
 bool scoredP1 = false, scoredP2 = false, inMenu = true, insNameP1 = false, insNameP2 = false;
+GLfloat xv = 0.0f, yv = 0.0f, zv = 0.0f;
 
 void writeBitmapString(void* font, string str) {
     const char* c = str.c_str();
@@ -195,7 +202,6 @@ static void cube(void)  //ci serve per i parallelepipedi texturizabili
 	glVertex3d(-0.5, 0.5, 1.0);
 	glEnd();
 
-
 	glPopMatrix();
 
 	glFlush();
@@ -228,13 +234,13 @@ public:
 
     glPushMatrix();
 
- 	glTranslated(0.0, 0.0, -dimZ/2);
-	glRotated(0.0, 0.0, 0.0, 0.0);
-   glScalef(dimX, dimY,0);
+ 	  glTranslated(0.0, 0.0, -dimZ/2);
+	  glRotated(0.0, 0.0, 0.0, 0.0);
+    glScalef(dimX, dimY,0);
    
   
-	cubebase();
-  glPopMatrix();
+	  cubebase();
+    glPopMatrix();
   }
 
   GLfloat getDimX(){ return dimX; }
@@ -333,7 +339,8 @@ public:
   static void moveBall(int);
   void moveball(int);
 };
-Ball *ball = new Ball(0, 0, 0, 0.3f, 0.4f, 0.2f ,0.3f);
+
+Ball *ball = new Ball(0, 0, 0, 0.3f, xv, yv, zv);
 
 //Qui sarebbe giusto passare
 void Ball::moveball(int i) // faccio check collision con bordi e con i player
@@ -357,7 +364,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           zPal = 0;
           campo.getPlayer(2)->encreseScore();
           scoredP2 = true;
-          keyState[' '] = !keyState[' '];
+          keyState[' '] = false;
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
         }
   }
@@ -375,7 +382,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           zPal = 0;
           campo.getPlayer(1)->encreseScore();
           scoredP1 = true;
-          keyState[' '] = !keyState[' '];
+          keyState[' '] = false;
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
         }
   }
@@ -409,7 +416,7 @@ void loadExternalTextures(char* menu, char* tField, char* tP1, char* tP2)
 	unsigned char *img;
   while( i < numeroTexture )
   {
-    if(i < 1) // menu e campo in RGB
+    if(i < 2) // menu e campo in RGB
     {
       img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
       if (img != NULL) 
@@ -459,8 +466,7 @@ GLvoid mouse(GLint button, GLint state, GLint x, GLint y)
       yStart = y;
     }
   }
-  if(inMenu)
-  {
+  if(inMenu){
     //controllo hit riquadro per l'inserimento del primo nome
     if(x > width/100.0f*12.0f && x < width/100.0f*37.0f && height - y > height - height/100.0f*42.5f && height -y < height - height/100.0f*32.0f)
       insNameP1 = true;
@@ -472,14 +478,35 @@ GLvoid mouse(GLint button, GLint state, GLint x, GLint y)
     else
       insNameP2 = false;
     //controllo hit tasto start
-    cout<<x<<" "<<y<<endl;
     if(x > width/100.0f*38.0f && x < width/100.0f*63.0f && height - y > height - height/100.0f*94.0f && height -y < height - height/100.0f*85.0f)
       inMenu = false;
     else
       inMenu = true;
+    //controllo hit velocità X
+    if(x > width/100.0f*40.5f && x < width/100.0f*47.0f && height - y > height - height/100.0f*75.0f && height -y < height - height/100.0f*67.0f)
+    {
+      if(button == 3 && xv < 1.0f)
+        xv += 0.01;
+      if(button == 4  && xv > 0.0f)
+        xv -= 0.01;
+    }        
+    //controllo hit velocità Y
+    if(x > width/100.0f*52.0f && x < width/100.0f*58.5f && height - y > height - height/100.0f*75.0f && height -y < height - height/100.0f*67.0f)
+    {  
+      if(button == 3 && yv < 1.0f)
+        yv += 0.01;
+      if(button == 4 && yv > 0.0f)
+        yv -= 0.01;
+    }
+    //controllo hit velocità Z
+    if(x > width/100.0f*63.0f && x < width/100.0f*69.5f && height - y > height - height/100.0f*75.0f && height -y < height - height/100.0f*67.0f)
+    {  
+      if(button == 3 && zv < 1.0f)
+        zv += 0.01;
+      if(button == 4 && zv > 0.0f)
+        zv -= 0.01;
+    }
   }
-    
-  
 }
 
 // Movimento del mouse
@@ -529,7 +556,7 @@ GLvoid init(GLvoid)
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glGenTextures(1, texture); 
+  glGenTextures(4, texture); 
   loadExternalTextures((char*)"menu.jpg", (char*)"field.png", (char*)"player1.png", (char*)"player2.png");
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
@@ -542,11 +569,10 @@ GLvoid init(GLvoid)
 // Callback per la tastiera
 GLvoid inputKey(GLubyte key, GLint x, GLint y)
 {
-  cout<<"start: "<<keyState[' ']<<" pause: "<<keyState['p']<<endl;
   switch (key)
   {
   case KEY_ESC:
-    exit(0);
+    exit(0); 
   case 'a':
     keyState['a'] = true;
     break;
@@ -560,19 +586,25 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
     keyState['s'] = true;
     break;
   case 'p': //tasto pause
-    if(!keyState[' ']){
-      keyState['p'] = !keyState['p'];
-      if(keyState['p'])
-        ball->setSpeedXYZact(0.0f, 0.0f, 0.0f); /*fermo la pallina*/
-      else
-        ball->setSpeedXYZact(ball->getSpeedXprc(), ball->getSpeedYprc(), ball->getSpeedZprc()); /*riparte la pallina alla vecchia velocità*/
+    if(!inMenu){ //se non sei nel menu
+      if(keyState[' ']){ // il gioco è attivo
+        keyState['p'] = !keyState['p']; // aggiorna flag pausa
+        if(keyState['p'])
+          ball->setSpeedXYZact(0.0f, 0.0f, 0.0f); /*fermo la pallina*/
+        else
+          ball->setSpeedXYZact(ball->getSpeedXprc(), ball->getSpeedYprc(), ball->getSpeedZprc()); /*riparte la pallina alla vecchia velocità*/
+      }
+      cout<<"p: "<<keyState['p']<<endl;
     }
     break;
   case ' ':
-    if(!inMenu){
-      keyState[' '] = !keyState[' '];
-      if(!keyState[' '])
-        ball->setSpeedXYZ(); //bugstart
+    if(!inMenu && !keyState[' ']){ //se sei in menu e il gioco non è attivo allora possiamo attivarlo con space
+      keyState[' '] = true;
+      if(keyState[' ']){
+        ball->chageSpeedvector(xv, yv, zv);
+        ball->setSpeedXYZ(); 
+      }
+    cout<<"start : "<<keyState[' ']<<endl;
     }
     break;
   }
@@ -864,10 +896,12 @@ GLvoid drawScene(GLvoid)
     glColor3f(1.0f, 1.0f, 0.0f);
     glRasterPos3f(60, 6, 0);
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "LEGEND");
-    glRasterPos3f(55,0, 0);
+    glRasterPos3f(55, 0, 0);
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "p = PAUSE");
     glRasterPos3f(50, -5, 0);
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "space = START");
+    glRasterPos3f(48, -10, 0);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "esc = MENU'");
     // Posizione luce legata al punto di vista:
 
     glEnable(GL_LIGHTING);
@@ -940,6 +974,18 @@ GLvoid drawScene(GLvoid)
     glColor3f(1.0f, 1.0f, 1.0f);
     glRasterPos3f(width/100.0f*14.0f, height - height/100.0f*56.0f, 0.0f);
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName());
+    //label Xvel
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos3f(width/100.0f*42.7f, height - height/100.0f*72.5f, 0.0f);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(xv).substr(0, 4));
+    //label Yvel
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos3f(width/100.0f*53.7f, height - height/100.0f*72.5f, 0.0f);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(yv).substr(0, 4));
+    //label Zvel
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos3f(width/100.0f*64.9f, height - height/100.0f*72.5f, 0.0f);
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(zv).substr(0, 4));
         glEnable(GL_TEXTURE_2D);
               glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
               glBindTexture(GL_TEXTURE_2D, texture[0]);
@@ -1023,6 +1069,7 @@ void labelPopUp(int endLoop){
 
 int main(int argc, char *argv[])
 {
+  
   glutInit(&argc, argv);
 
   glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
