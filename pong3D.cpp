@@ -572,7 +572,11 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
   switch (key)
   {
   case KEY_ESC:
-    exit(0); 
+  if(inMenu)
+    exit(0);
+  else
+    inMenu = !inMenu;
+  break;
   case 'a':
     keyState['a'] = true;
     break;
@@ -656,8 +660,6 @@ void specialKeyUpInput(int key, int _x, int _y){
 
 void inputKeyup(unsigned char key, int x, int y){
   switch (key){
-  case KEY_ESC:
-    exit(0);
   case 'a':
     keyState['a'] = false;
     break;
@@ -954,7 +956,7 @@ GLvoid drawScene(GLvoid)
   glPopMatrix();
   glDisable(GL_LIGHTING);
   glPopMatrix();
-  }else{
+  }else{ //menù
     glViewport(0, 0, width, height);
     glPushMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -976,15 +978,15 @@ GLvoid drawScene(GLvoid)
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName());
     //label Xvel
     glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos3f(width/100.0f*42.7f, height - height/100.0f*72.5f, 0.0f);
+    glRasterPos3f(width/100.0f*42.3f, height - height/100.0f*72.5f, 0.0f);
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(xv).substr(0, 4));
     //label Yvel
     glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos3f(width/100.0f*53.7f, height - height/100.0f*72.5f, 0.0f);
+    glRasterPos3f(width/100.0f*53.3f, height - height/100.0f*72.5f, 0.0f);
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(yv).substr(0, 4));
     //label Zvel
     glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos3f(width/100.0f*64.9f, height - height/100.0f*72.5f, 0.0f);
+    glRasterPos3f(width/100.0f*64.7f, height - height/100.0f*72.5f, 0.0f);
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(zv).substr(0, 4));
         glEnable(GL_TEXTURE_2D);
               glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
