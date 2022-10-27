@@ -35,7 +35,7 @@ GLfloat RossoTenue[] = {0.3f, 0.1f, 0.1f, 1.0f};
 GLfloat BluTenue[] = {0.1f, 0.1f, 0.3f, 1.0f};
 GLfloat GialloTenue[] = {0.6f, 0.6f, 0.0f, 1.0f};
 GLfloat myDistance;
-static unsigned int texture[5]; // Array of texture indices. Serve ad indicare l indice della texture 
+static unsigned int texture[7]; // Array of texture indices. Serve ad indicare l indice della texture 
 
 
 GLfloat lightPosition[] = {0.0f, 0.0f, 1.0f, 0.0f};
@@ -55,7 +55,7 @@ fstream classifica;
 bool player1ChangeTexture = false;
 bool player2ChangeTexture = false;
 bool inClassifica = false;
-int indexPlayer1Texture = 3;
+int indexPlayer1Texture = 5;
 int indexPlayer2Texture = 3;
 
 void writeBitmapString(void* font, string str) {
@@ -472,11 +472,11 @@ void Ball::moveBall(int i)
 
 
 //serve per caricare texture da immagini con soil
-void loadExternalTextures(char* menu, char* tField, char* classifica, char* tP1, char* tP2)			
+void loadExternalTextures(char* menu, char* tField, char* classifica, char* tP1, char* tP2,char* tP3)			
 {
-  int numeroTexture = 5;
+  int numeroTexture = 6;
   int i = 0;
-  char* filenameTexture[] = {menu, tField, classifica, tP1, tP2};
+  char* filenameTexture[] = {menu, tField, classifica, tP1, tP2, tP3};
   int width, height, channels;
 	unsigned char *img;
   while( i < numeroTexture )
@@ -602,22 +602,6 @@ GLvoid motion(GLint x, GLint y)
   }
 }
 
-// Disegna un sistema di assi cartesiane con origine in (0,0,0)
-GLvoid drawAxis(GLfloat lato)
-{
-  glBegin(GL_LINES);
-  glColor3fv(Rosso);
-  glVertex3f(0, 0, 0);
-  glVertex3f(lato, 0, 0);
-  glColor3fv(Verde);
-  glVertex3f(0, 0, 0);
-  glVertex3f(0, lato, 0);
-  glColor3fv(Blu);
-  glVertex3f(0, 0, 0);
-  glVertex3f(0, 0, lato);
-  glEnd();
-}
-
 
 // inizializzazioni
 GLvoid init(GLvoid)
@@ -630,8 +614,8 @@ GLvoid init(GLvoid)
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glGenTextures(5, texture);  //carico 5 texture
-  loadExternalTextures((char*)"menu.jpg", (char*)"field.png", (char*)"classifica.jpg", (char*)"player1.png", (char*)"player2.png");
+  glGenTextures(6, texture);  //carico 6 texture
+  loadExternalTextures((char*)"menu.jpg", (char*)"field.png", (char*)"classifica.jpg", (char*)"player1.png", (char*)"player2.png",(char*)"player3.png");
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
   glEnable(GL_LIGHT0);
@@ -849,7 +833,6 @@ GLvoid drawScene(GLvoid)
     // Posizione luce legata al punto di vistaa:
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
     setView(alphaxP1, alphazP1, dist);
-    drawAxis(20.0f);
 
     glEnable(GL_LIGHTING);
       glMaterialfv(GL_FRONT, GL_EMISSION, Nero);
@@ -931,8 +914,7 @@ GLvoid drawScene(GLvoid)
   // Posizione luce legata al punto di vista:
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
     setView(alphaxP2, alphazP2, dist);
-    drawAxis(20.0f);
-
+    
     glEnable(GL_LIGHTING);
       glMaterialfv(GL_FRONT, GL_EMISSION, Nero);
       glMaterialfv(GL_FRONT, GL_AMBIENT, RossoTenue);
@@ -1147,7 +1129,9 @@ GLvoid drawScene(GLvoid)
               if(player1ChangeTexture)
               {
                //suppondo che le prima 2 texture non siano usabili per il giocatore
-                indexPlayer1Texture = 3 + indexPlayer1Texture%2;
+                indexPlayer1Texture++;
+                indexPlayer1Texture = 3+indexPlayer1Texture%3;
+                cout<<"indexplauer "<< indexPlayer1Texture<<endl;
                 glBindTexture(GL_TEXTURE_2D, texture[indexPlayer1Texture]);
                 player1ChangeTexture = false;
               }
@@ -1177,8 +1161,9 @@ GLvoid drawScene(GLvoid)
               glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
               if(player2ChangeTexture)
               {
+                indexPlayer2Texture++;
                 //suppondo che le prima 2 texture non siano usabili per il giocatore
-                indexPlayer2Texture = 3 + indexPlayer2Texture%2;
+                indexPlayer2Texture = 3 + indexPlayer2Texture%3;
                 glBindTexture(GL_TEXTURE_2D, texture[indexPlayer2Texture]);
                 player2ChangeTexture = false;
               }
