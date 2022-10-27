@@ -762,7 +762,7 @@ GLvoid drawScene(GLvoid)
   glPopMatrix();
 
   glPushMatrix();
-    // Posizione luce legata al punto di vista:
+    // Posizione luce legata al punto di vistaa:
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
     setView(alphaxP1, alphazP1, dist);
     drawAxis(20.0f);
