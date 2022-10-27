@@ -6,6 +6,7 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
+#include <unistd.h>
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
@@ -358,7 +359,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           speedXact = (speedXact+0.1)*(-1);
         else
         {
-      // aumento score
+          // aumento score
           xPal = 0;
           yPal = 0;
           zPal = 0;
@@ -387,7 +388,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           keyState[' '] = false;
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
           if(campo.getPlayer(1)->getScore() == 5)
-            flagWin2 = true;
+            flagWin1 =  true;
         }
   }
   
@@ -617,6 +618,10 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
       }
     cout<<"start : "<<keyState[' ']<<endl;
     }
+    //Check fine partita e aggiornamento di tutte le variabili del caso per restartare
+
+    flagWin1 = false;
+    flagWin2 = false;
     break;
   }
   glutPostRedisplay();
@@ -748,12 +753,12 @@ GLvoid drawScene(GLvoid)
     glRasterPos3f(-10,22,0);
     if(scoredP1 == false)
       writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(1)->getName().append(": ").append(to_string(campo.getPlayer(1)->getScore())));
-    else
-      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
-    if(flagWin1)
-      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, " : WIN!!!");
-    if(flagWin2)
-      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, " : LOSE!!!");
+    else{
+      if(campo.getPlayer(1)->getScore() != 5)
+        writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
+      if(flagWin1){
+        writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, " WIN!!!");
+    }
   glPopMatrix();
 
   glPushMatrix();
@@ -829,12 +834,13 @@ GLvoid drawScene(GLvoid)
   glRasterPos3f(-10,22,0);
   if(!scoredP2)
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(2)->getName().append(": ").append(to_string(campo.getPlayer(2)->getScore())));
-  else
-     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
-  if(flagWin2)
-    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "WIN!!!");
-  if(flagWin1)
-    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "LOSE!!!");
+  else{
+    if(campo.getPlayer(2)->getScore() != 5)
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
+  }
+  if(flagWin2){
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "WIN!!!");
+    }
   glPopMatrix();
 
   glPushMatrix();
@@ -1080,6 +1086,8 @@ void labelPopUp(int endLoop){
   if(i > endLoop){
     if(scoredP1) scoredP1 = false;
     if(scoredP2) scoredP2 = false;
+    // if(flagWin1) flagWin1 = false;
+    // if(flagWin2) flagWin2 = false;
     i = 0;
   }
   i++;
