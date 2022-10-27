@@ -6,6 +6,7 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
+#include <fstream>
 #include <unistd.h>
 #include <stdio.h>
 #include <math.h>
@@ -50,6 +51,11 @@ string scoreP1;
 string scoreP2;
 bool scoredP1 = false, scoredP2 = false, inMenu = true, insNameP1 = false, insNameP2 = false, flagWin1 = false, flagWin2 = false;
 GLfloat xv = 0.30f, yv = 0.22f, zv = 0.15f;
+fstream classifica;
+bool player1ChangeTexture = false;
+bool player2ChangeTexture = false;
+int indexPlayer1Texture = 2;
+int indexPlayer2Texture = 2;
 
 void writeBitmapString(void* font, string str) {
     const char* c = str.c_str();
@@ -208,6 +214,55 @@ static void cube(void)  //ci serve per i parallelepipedi texturizabili
 	glFlush();
 }
 
+class CVector3D
+{
+	GLdouble x;
+	GLdouble y;
+	GLdouble z;
+public:
+	CVector3D() {
+		x = 0; y = 0; z = 0;
+	}
+	CVector3D(GLdouble _x, GLdouble _y, GLdouble _z) {
+		x = _x; y = _y; z = _z;
+	}
+	GLdouble getX() { return x; }
+	GLdouble getY() { return y; }
+	GLdouble getZ() { return z; }
+};
+
+
+
+
+
+
+
+CVector3D GetOGLPos(int x, int y) {
+	GLint viewport[4];
+	GLdouble modelview[16], projection[16];
+	GLfloat winX, winY, winZ;
+	GLdouble posX, posY, posZ;
+
+	glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+	glGetDoublev(GL_PROJECTION_MATRIX, projection);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+
+
+	winX = (GLfloat)x;
+	winY = (GLfloat)viewport[3] - (GLfloat)y; 
+
+    
+    GLfloat pixel;
+
+
+	//glReadPixels(GLint(winX), GLint(winY), 1, 1, GL_GREEN, GL_FLOAT, &winZ);
+  glReadPixels(GLint(winX), GLint(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &pixel);
+
+
+	gluUnProject(winX, winY, pixel, modelview, projection, viewport, &posX,&posY, &posZ);
+                /*punto sulla finestra 2d z=0*/                     /*punto nella scena 3d, calcola z*/
+	return CVector3D(posX, posY, posZ);
+}
 
 class Field
 {
@@ -367,8 +422,12 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           scoredP2 = true;
           keyState[' '] = false;
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
-          if(campo.getPlayer(2)->getScore() == 5)
+          if(campo.getPlayer(2)->getScore() == 5){
             flagWin2 = true;
+            classifica.open("classifica.txt", ios::app);
+            
+            classifica.close();
+          }
         }
   }
 
@@ -401,7 +460,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
   {
     speedZact = -speedZact;
   }
-  cout<<speedXact<<endl;
+  // cout<<speedXact<<endl;
   glutPostRedisplay();
 }
 
@@ -471,7 +530,16 @@ GLvoid mouse(GLint button, GLint state, GLint x, GLint y)
       yStart = y;
     }
   }
-  if(inMenu){
+  if(inMenu && state == GLUT_DOWN && button == GLUT_LEFT_BUTTON)
+  {
+    CVector3D v = GetOGLPos(x, y);
+    if(v.getZ()+11 >= -10 && v.getZ()+11 < 0)  //significa che il giocatore2 vuola cambiare texture
+    {
+        player1ChangeTexture = true;
+    }
+    cout<<"player1"<<v.getZ()<<" "<<v.getZ()+11<<endl;
+    if(v.getZ()+11 > 0) //significa che il giocatore1 vuola cambiare texture
+        player2ChangeTexture = true;
     //controllo hit riquadro per l'inserimento del primo nome
     if(x > width/100.0f*12.0f && x < width/100.0f*37.0f && height - y > height - height/100.0f*42.5f && height -y < height - height/100.0f*32.0f)
       insNameP1 = true;
@@ -487,7 +555,8 @@ GLvoid mouse(GLint button, GLint state, GLint x, GLint y)
       inMenu = false;
     else
       inMenu = true;
-    //controllo hit velocità X
+  }
+  //controllo hit velocità X
     if(x > width/100.0f*40.5f && x < width/100.0f*47.0f && height - y > height - height/100.0f*75.0f && height -y < height - height/100.0f*67.0f)
     {
       if(button == 3 && xv < 1.0f)
@@ -511,7 +580,6 @@ GLvoid mouse(GLint button, GLint state, GLint x, GLint y)
       if(button == 4 && zv > 0.0f)
         zv -= 0.01;
     }
-  }
 }
 
 // Movimento del mouse
@@ -581,20 +649,24 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
     exit(0);
   else{
     inMenu = !inMenu; //vai al menu
-    keyState['p'] = true; //metti in pausa azzerando la velocità attuale
+    //keyState['p'] = true; //metti in pausa azzerando la velocità attuale
     ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
   }
   break;
   case 'a':
+  if(!inMenu)
     keyState['a'] = true;
     break;
   case 'd':
+  if(!inMenu)
     keyState['d'] = true;
     break;
   case 'w':
+  if(!inMenu)
     keyState['w'] = true;
     break;
   case 's':
+  if(!inMenu)
     keyState['s'] = true;
     break;
   case 'p': //tasto pause
@@ -618,8 +690,12 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
       }
     cout<<"start : "<<keyState[' ']<<endl;
     }
-    //Check fine partita e aggiornamento di tutte le variabili del caso per restartare
-
+    if(flagWin1 || flagWin2){ //fine partita ritorna al menu resetto i player
+      inMenu = true;
+      campo.getPlayer(1)->setName("");
+      campo.getPlayer(2)->setName("");
+      ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
+    }
     flagWin1 = false;
     flagWin2 = false;
     break;
@@ -756,7 +832,7 @@ GLvoid drawScene(GLvoid)
     else{
       if(campo.getPlayer(1)->getScore() != 5)
         writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
-      if(flagWin1){
+      if(flagWin1)
         writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, " WIN!!!");
     }
   glPopMatrix();
@@ -788,9 +864,9 @@ GLvoid drawScene(GLvoid)
 	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
           glEnable( GL_BLEND );
           glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-          glBindTexture(GL_TEXTURE_2D, texture[3]); 
+          glBindTexture(GL_TEXTURE_2D, texture[indexPlayer2Texture]); 
           campo.getPlayer(2)->drawPlayer();
-          glBindTexture(GL_TEXTURE_2D, texture[2]);
+          glBindTexture(GL_TEXTURE_2D, texture[indexPlayer1Texture]);
           campo.getPlayer(1)->drawPlayer();
         glDisable( GL_BLEND );
       glBindTexture(GL_TEXTURE_2D, texture[1]); 
@@ -870,9 +946,9 @@ GLvoid drawScene(GLvoid)
 	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glEnable( GL_BLEND );
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-        glBindTexture(GL_TEXTURE_2D, texture[3]);
+        glBindTexture(GL_TEXTURE_2D, texture[indexPlayer2Texture]);
 	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
-        glBindTexture(GL_TEXTURE_2D, texture[2]);
+        glBindTexture(GL_TEXTURE_2D, texture[indexPlayer1Texture]);
         campo.getPlayer(1)->drawPlayer();
         glDisable( GL_BLEND );
       glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
@@ -977,7 +1053,7 @@ GLvoid drawScene(GLvoid)
   glPopMatrix();
   glDisable(GL_LIGHTING);
   glPopMatrix();
-  }else{ //menù
+  }else{
     glViewport(0, 0, width, height);
     glPushMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -1024,7 +1100,67 @@ GLvoid drawScene(GLvoid)
 
                 glTexCoord2f(1.0, 0);
                 glVertex3d(width, height, 0.0f);
+              //texture player1 
+              glEnd();
+              glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+              glEnable( GL_BLEND );
+              glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+              //se il player1 ha deciso di cambiare texture
+              if(player1ChangeTexture)
+              {
+                int temp = indexPlayer1Texture;
+                temp++; //suppondo che le prima 2 texture non siano usabili per il giocatore
+                indexPlayer1Texture = 2 + temp%2;
+                glBindTexture(GL_TEXTURE_2D, texture[indexPlayer1Texture]);
+                player1ChangeTexture = false;
+              }
+              else
+                glBindTexture(GL_TEXTURE_2D, texture[indexPlayer1Texture]);
 
+              glBegin(GL_POLYGON);
+                glTexCoord2f(0.0, 0.0);
+                glVertex3d(width/2.06f, height - (height/2.7), 10.0f);
+
+                glTexCoord2f(0.0, 1.0);
+                glVertex3d(width/2.06f, height - (height/1.7), 10.0f);
+
+                glTexCoord2f(1.0, 1.0);
+                glVertex3d(width/1.58f, height - (height/1.7), 10.0f);
+
+                glTexCoord2f(1.0, 0);
+                glVertex3d(width/1.58f, height -(height/2.7), 10.0f);
+              
+              glDisable(GL_BLEND);
+              glEnd();
+
+
+              //il player 2 decide ci cambiare texture player2
+              glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+              glEnable( GL_BLEND );
+              glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+              if(player2ChangeTexture)
+              {
+                int temp = indexPlayer2Texture;
+                temp++; //suppondo che le prima 2 texture non siano usabili per il giocatore
+                indexPlayer2Texture = 2 + temp%2;
+                glBindTexture(GL_TEXTURE_2D, texture[indexPlayer2Texture]);
+                player2ChangeTexture = false;
+              }
+              else
+                glBindTexture(GL_TEXTURE_2D, texture[indexPlayer2Texture]);
+
+              glBegin(GL_POLYGON);
+                glTexCoord2f(0.0, 0.0);
+                glVertex3d(width/1.35f, height - (height/2.7), 20.0f);
+
+                glTexCoord2f(0.0, 1.0);
+                glVertex3d(width/1.35f, height - (height/1.7), 20.0f);
+
+                glTexCoord2f(1.0, 1.0);
+                glVertex3d(width/1.13, height - (height/1.7), 20.0f);
+
+                glTexCoord2f(1.0, 0);
+                glVertex3d(width/1.13, height -(height/2.7), 20.0f);
               glEnd();
         glDisable(GL_TEXTURE_2D);
       
