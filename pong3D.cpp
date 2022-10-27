@@ -1229,7 +1229,7 @@ void idle(){
       inClassifica = false;
     if(keyState['t'])
       campo.getPlayer(2)->encreaseZ(campo.getDimZ());
-    if(keyState['b'])
+    if(keyState['b'])          
       campo.getPlayer(2)->decreaseZ(campo.getDimZ());
     if(keyState['l'])
       campo.getPlayer(2)->encreaseY(campo.getDimY());
