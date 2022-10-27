@@ -35,7 +35,7 @@ GLfloat RossoTenue[] = {0.3f, 0.1f, 0.1f, 1.0f};
 GLfloat BluTenue[] = {0.1f, 0.1f, 0.3f, 1.0f};
 GLfloat GialloTenue[] = {0.6f, 0.6f, 0.0f, 1.0f};
 GLfloat myDistance;
-static unsigned int texture[4]; // Array of texture indices. Serve ad indicare l indice della texture 
+static unsigned int texture[5]; // Array of texture indices. Serve ad indicare l indice della texture 
 
 
 GLfloat lightPosition[] = {0.0f, 0.0f, 1.0f, 0.0f};
@@ -45,7 +45,7 @@ static GLfloat fovy = 80, aspect = 1, nearClipPrp = 3, farClipPrs = 100, nearCli
 static GLfloat dist = 30, alphaxP1 = 90.0, alphazP1 = 91.0, alphaxP2 = 90.0, alphazP2 = -91.0; //con questa rotazione siamo nella prospettiva del giocatore1 l'asseX verso di noi
 static GLdouble xStart = 0.0, yStart = 0.0;//per la rotazione con il mouse
 static GLint width = 1200, height = 800;
-static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false}, {' ', false},
+static map<char, bool> keyState = {{'a', false}, {'s', false}, {'d', false}, {'w', false}, {'p', false}, {' ', false},{'c',false},
 {'t', false}, {'b', false}, {'l', false}, {'r', false}}; //hash per i tasti della tastiera t=top b=bottom l=left r=right true=premuto false=rilasciato
 string scoreP1;
 string scoreP2;
@@ -54,8 +54,9 @@ GLfloat xv = 0.30f, yv = 0.22f, zv = 0.15f;
 fstream classifica;
 bool player1ChangeTexture = false;
 bool player2ChangeTexture = false;
-int indexPlayer1Texture = 2;
-int indexPlayer2Texture = 2;
+bool inClassifica = false;
+int indexPlayer1Texture = 3;
+int indexPlayer2Texture = 3;
 
 void writeBitmapString(void* font, string str) {
     const char* c = str.c_str();
@@ -471,16 +472,16 @@ void Ball::moveBall(int i)
 
 
 //serve per caricare texture da immagini con soil
-void loadExternalTextures(char* menu, char* tField, char* tP1, char* tP2)			
+void loadExternalTextures(char* menu, char* tField, char* classifica, char* tP1, char* tP2)			
 {
-  int numeroTexture = 4;
+  int numeroTexture = 5;
   int i = 0;
-  char* filenameTexture[] = {menu, tField, tP1, tP2};
+  char* filenameTexture[] = {menu, tField, classifica, tP1, tP2};
   int width, height, channels;
 	unsigned char *img;
   while( i < numeroTexture )
   {
-    if(i < 2) // menu e campo in RGB
+    if(i < 3) // menu e campo in RGB
     {
       img = SOIL_load_image(filenameTexture[i], &width, &height, &channels, SOIL_LOAD_AUTO);
       if (img != NULL) 
@@ -629,8 +630,8 @@ GLvoid init(GLvoid)
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glGenTextures(4, texture); 
-  loadExternalTextures((char*)"menu.jpg", (char*)"field.png", (char*)"player1.png", (char*)"player2.png");
+  glGenTextures(5, texture);  //carico 5 texture
+  loadExternalTextures((char*)"menu.jpg", (char*)"field.png", (char*)"classifica.jpg", (char*)"player1.png", (char*)"player2.png");
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
   glEnable(GL_LIGHT0);
@@ -653,6 +654,10 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
     ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
   }
   break;
+  case 'c':
+  if(inMenu)
+    keyState['c'] = true;
+    break;
   case 'a':
   if(!inMenu)
     keyState['a'] = true;
@@ -760,6 +765,8 @@ void inputKeyup(unsigned char key, int x, int y){
   case 's':
     keyState['s'] = false;
     break;
+  case 'c':
+    keyState['c'] = false;
   }
   if(inMenu){
     if(insNameP1){
@@ -810,7 +817,8 @@ void drawFilledCircle(GLfloat x, GLfloat y, GLfloat radius){
 GLvoid drawScene(GLvoid)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  if(!inMenu){
+  if(!inMenu)
+  {
   glEnable(GL_DEPTH_TEST);
   /*Impostazione vista prospettica quando siamo nel gioco*/
   glMatrixMode(GL_PROJECTION);
@@ -1021,8 +1029,8 @@ GLvoid drawScene(GLvoid)
 
   glPushMatrix();
     glEnable(GL_TEXTURE_2D);
-      glBindTexture(GL_TEXTURE_2D, texture[3]); //array di texture caricate con loadExternal()
-	      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      //glBindTexture(GL_TEXTURE_2D, texture[3]); //array di texture caricate con loadExternal()
+	      //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	      campo.getPlayer(2)->drawPlayer();  //funzione modificata per permettere di applicare le texture
         campo.getPlayer(1)->drawPlayer();
       glBindTexture(GL_TEXTURE_2D, texture[1]); //array di texture caricate con loadExternal()
@@ -1053,7 +1061,37 @@ GLvoid drawScene(GLvoid)
   glPopMatrix();
   glDisable(GL_LIGHTING);
   glPopMatrix();
-  }else{
+  }else if(inClassifica)
+  {
+    glViewport(0, 0, width, height);
+    glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0f, width, 0.0f, height, nearClipOrt, farClipOrt);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glEnable(GL_DEPTH_TEST); //prova a non abilitarlo
+    setView(0.0, 0.0, dist);
+    glEnable(GL_TEXTURE_2D);
+              glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+              glBindTexture(GL_TEXTURE_2D, texture[2]);
+              glBegin(GL_POLYGON);
+                glTexCoord2f(0.0, 0.0);
+                glVertex3d(0.0f, height, 0.0f);
+
+                glTexCoord2f(0.0, 1.0);
+                glVertex3d(0.0f, 0.0f, 0.0f);
+
+                glTexCoord2f(1.0, 1.0);
+                glVertex3d(width, 0.0f, 0.0f);
+
+                glTexCoord2f(1.0, 0);
+                glVertex3d(width, height, 0.0f);
+              //texture player1 
+              glEnd();
+  }
+  else
+  { 
     glViewport(0, 0, width, height);
     glPushMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -1108,9 +1146,8 @@ GLvoid drawScene(GLvoid)
               //se il player1 ha deciso di cambiare texture
               if(player1ChangeTexture)
               {
-                int temp = indexPlayer1Texture;
-                temp++; //suppondo che le prima 2 texture non siano usabili per il giocatore
-                indexPlayer1Texture = 2 + temp%2;
+               //suppondo che le prima 2 texture non siano usabili per il giocatore
+                indexPlayer1Texture = 3 + indexPlayer1Texture%2;
                 glBindTexture(GL_TEXTURE_2D, texture[indexPlayer1Texture]);
                 player1ChangeTexture = false;
               }
@@ -1140,9 +1177,8 @@ GLvoid drawScene(GLvoid)
               glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
               if(player2ChangeTexture)
               {
-                int temp = indexPlayer2Texture;
-                temp++; //suppondo che le prima 2 texture non siano usabili per il giocatore
-                indexPlayer2Texture = 2 + temp%2;
+                //suppondo che le prima 2 texture non siano usabili per il giocatore
+                indexPlayer2Texture = 3 + indexPlayer2Texture%2;
                 glBindTexture(GL_TEXTURE_2D, texture[indexPlayer2Texture]);
                 player2ChangeTexture = false;
               }
@@ -1187,7 +1223,10 @@ void idle(){
       campo.getPlayer(1)->encreaseY(campo.getDimZ());
     if(keyState['w'])
       campo.getPlayer(1)->encreaseZ(campo.getDimZ());
-
+    if(keyState['c'])
+      inClassifica = true;
+    else
+      inClassifica = false;
     if(keyState['t'])
       campo.getPlayer(2)->encreaseZ(campo.getDimZ());
     if(keyState['b'])
