@@ -2,6 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "type": "shell",
+      "label": "install libs",
+      "command": "bash",
+      "args": [
+        "install-libs.sh"
+      ]
+    },
+    {
       "type": "cppbuild",
       "label": "C/C++: g++ compila il file attivo",
       "command": "/usr/bin/g++",
