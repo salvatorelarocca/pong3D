@@ -1,7 +1,7 @@
 //sudo apt-get install libglew-dev
 //sudo apt-get install libsoil-dev
 //sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-//g++ pong3D.cpp -o pong3D -lglut -lGLU -lGL -lSOIL -lGLEW -lSOIL
+//g++ pong3D.cpp -o pong3D -lglut -lGLU -lGL -lSOIL -lGLEW
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
