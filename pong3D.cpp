@@ -1,7 +1,7 @@
 //sudo apt-get install libglew-dev
 //sudo apt-get install libsoil-dev
 //sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev
-//g++ pong3D.cpp -o pong3D -lglut -lGLU -lGL -lSOIL -lGLEW -lSOIL
+//g++ pong3D.cpp -o pong3D -lglut -lGLU -lGL -lSOIL -lGLEW -lSOIL;
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
@@ -11,11 +11,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-#include<map>
+#include <map>
 #include <SOIL/SOIL.h>
-#include<time.h>
-#include<string>
-#include<vector>
+#include <time.h>
+#include <string>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -51,7 +52,6 @@ string scoreP1;
 string scoreP2;
 bool scoredP1 = false, scoredP2 = false, inMenu = true, insNameP1 = false, insNameP2 = false, flagWin1 = false, flagWin2 = false;
 GLfloat xv = 0.30f, yv = 0.22f, zv = 0.15f;
-fstream classifica;
 bool player1ChangeTexture = false;
 bool player2ChangeTexture = false;
 bool inClassifica = false;
@@ -62,6 +62,58 @@ void writeBitmapString(void* font, string str) {
     const char* c = str.c_str();
     const char* cc;
     for (cc = c; *cc != '\0'; cc++) glutBitmapCharacter(font, *cc);
+}
+
+struct sort_pred {
+    bool operator()(const std::pair<string,int> &left, const std::pair<string,int> &right) {
+        return left.second > right.second;
+    }
+};
+
+void sortFile(string file){
+    string nome;
+    int pnt;
+    vector<pair<string, int>> v;
+    fstream f(file, ios::in | ios::out);
+    while(f>>nome){
+        f>>pnt;
+        v.push_back(pair<string, int>(nome, pnt));    
+    }
+    sort(v.begin(), v.end(), sort_pred());
+    cout<<f.tellg()<<endl; 
+    f.clear();
+    f.seekg(0, ios::beg);
+    cout<<f.tellg()<<endl; 
+    for (auto & element : v)
+    f<<element.first<<" "<<element.second<<endl;
+    f.close();
+}
+
+
+void InsertIntoFile(string file, string name){
+    bool searched = false;
+    string n;
+    int pnt;
+    fstream f;
+    f.open(file, ios::in | ios::out);
+    while(!f.eof()){
+        f >> n;
+        f >> pnt;
+
+        transform(n.begin(), n.end(), n.begin(), ::toupper);
+        transform(name.begin(), name.end(), name.begin(), ::toupper);
+        if(name == n && !searched){
+            searched = true;
+            f.seekg((int)-(n.size() + to_string(pnt).size() + 1), ios::cur);
+            f << n << " " << ++pnt <<endl;
+        }
+    }
+    f.clear();
+    f.seekg(0, ios::end);
+    if(!searched)
+        f << name << " " <<1<<endl;
+    f.close();
+    sortFile(file);
 }
 
 class Player
@@ -232,45 +284,30 @@ public:
 	GLdouble getZ() { return z; }
 };
 
-
-
-
-
-
-
 CVector3D GetOGLPos(int x, int y) {
 	GLint viewport[4];
 	GLdouble modelview[16], projection[16];
 	GLfloat winX, winY, winZ;
 	GLdouble posX, posY, posZ;
-
 	glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
 	glGetDoublev(GL_PROJECTION_MATRIX, projection);
 	glGetIntegerv(GL_VIEWPORT, viewport);
-
-
 	winX = (GLfloat)x;
 	winY = (GLfloat)viewport[3] - (GLfloat)y; 
-
-    
-    GLfloat pixel;
-
-
+  GLfloat pixel;
 	//glReadPixels(GLint(winX), GLint(winY), 1, 1, GL_GREEN, GL_FLOAT, &winZ);
   glReadPixels(GLint(winX), GLint(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &pixel);
-
-
 	gluUnProject(winX, winY, pixel, modelview, projection, viewport, &posX,&posY, &posZ);
-                /*punto sulla finestra 2d z=0*/                     /*punto nella scena 3d, calcola z*/
+  /*punto sulla finestra 2d z=0*/                     /*punto nella scena 3d, calcola z*/
 	return CVector3D(posX, posY, posZ);
 }
 
 class Field
 {
-private:
-  GLfloat dimX, dimY, dimZ;
-  Player *player1, *player2;
-public:
+  private:
+    GLfloat dimX, dimY, dimZ;
+    Player *player1, *player2;
+  public:
   Field(GLfloat dimX, GLfloat dimY, GLfloat dimZ, GLfloat dimPlayer)
   {
     this->dimX = dimX;
@@ -291,12 +328,12 @@ public:
 
     glPushMatrix();
 
- 	  glTranslated(0.0, 0.0, -dimZ/2);
-	  glRotated(0.0, 0.0, 0.0, 0.0);
+    glTranslated(0.0, 0.0, -dimZ/2);
+    glRotated(0.0, 0.0, 0.0, 0.0);
     glScalef(dimX, dimY,0);
-   
   
-	  cubebase();
+  
+    cubebase();
     glPopMatrix();
   }
 
@@ -315,11 +352,7 @@ public:
 };
 
 
-/*Cosi mettiamo globale solo il campo
-è giusto mettere anche la palla nella classe campo*/
 Field campo(40, 11, 11, 2); // X profondità y and z facciata. Ultimo parametro dimensione giocatori nel campo
-
-
 
 class Ball
 {
@@ -392,7 +425,6 @@ public:
   GLfloat getSpeedYprc(){ return speedYprc; }
   GLfloat getSpeedZprc(){ return speedZprc; }
 
-
   static void moveBall(int);
   void moveball(int);
 };
@@ -425,9 +457,7 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
           if(campo.getPlayer(2)->getScore() == 5){
             flagWin2 = true;
-            classifica.open("classifica.txt", ios::app);
-            
-            classifica.close();
+            InsertIntoFile("classifica.txt", campo.getPlayer(2)->getName());
           }
         }
   }
@@ -447,8 +477,10 @@ void Ball::moveball(int i) // faccio check collision con bordi e con i player
           scoredP1 = true;
           keyState[' '] = false;
           ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
-          if(campo.getPlayer(1)->getScore() == 5)
+          if(campo.getPlayer(1)->getScore() == 5){
             flagWin1 =  true;
+            InsertIntoFile("classifica.txt", campo.getPlayer(1)->getName());
+          }
         }
   }
   
@@ -639,7 +671,7 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
   }
   break;
   case 'c':
-  if(inMenu)
+  if(inMenu && (insNameP1 == false && insNameP2 == false))
     keyState['c'] = true;
     break;
   case 'a':
@@ -1043,8 +1075,7 @@ GLvoid drawScene(GLvoid)
   glPopMatrix();
   glDisable(GL_LIGHTING);
   glPopMatrix();
-  }else if(inClassifica)
-  {
+  }else if(inClassifica){
     glViewport(0, 0, width, height);
     glPushMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -1052,25 +1083,29 @@ GLvoid drawScene(GLvoid)
     glOrtho(0.0f, width, 0.0f, height, nearClipOrt, farClipOrt);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glEnable(GL_DEPTH_TEST); //prova a non abilitarlo
+    glEnable(GL_DEPTH_TEST);
     setView(0.0, 0.0, dist);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    /*TODO funzione stampa classifica in drawscene*/
+    glRasterPos3f(width/100.0f*14.0f, height - height/100.0f*39.2f, 0.0f); //posizione 14% width 39.2%height 
+    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "prova");
     glEnable(GL_TEXTURE_2D);
-              glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-              glBindTexture(GL_TEXTURE_2D, texture[2]);
-              glBegin(GL_POLYGON);
-                glTexCoord2f(0.0, 0.0);
-                glVertex3d(0.0f, height, 0.0f);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glBindTexture(GL_TEXTURE_2D, texture[2]);
+      glBegin(GL_POLYGON);
+        glTexCoord2f(0.0, 0.0);
+        glVertex3d(0.0f, height, 0.0f);
 
-                glTexCoord2f(0.0, 1.0);
-                glVertex3d(0.0f, 0.0f, 0.0f);
+        glTexCoord2f(0.0, 1.0);
+        glVertex3d(0.0f, 0.0f, 0.0f);
 
-                glTexCoord2f(1.0, 1.0);
-                glVertex3d(width, 0.0f, 0.0f);
+        glTexCoord2f(1.0, 1.0);
+        glVertex3d(width, 0.0f, 0.0f);
 
-                glTexCoord2f(1.0, 0);
-                glVertex3d(width, height, 0.0f);
-              //texture player1 
-              glEnd();
+        glTexCoord2f(1.0, 0);
+        glVertex3d(width, height, 0.0f);
+      glEnd();
+    glDisable(GL_TEXTURE_2D);
   }
   else
   { 
@@ -1081,11 +1116,8 @@ GLvoid drawScene(GLvoid)
     glOrtho(0.0f, width, 0.0f, height, nearClipOrt, farClipOrt);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glEnable(GL_DEPTH_TEST); //prova a non abilitarlo
+    glEnable(GL_DEPTH_TEST);
     setView(0.0, 0.0, dist);
-    //d'attivare al click di certe aree del menù che devono essere in funzione di width e height per essere responsive al resize
-    //label inserimento nome primo player
-    // IMPORTANTE lo (0,0) per questa vista è in basso a sinistra per rendere più semplice l'individuazioni di aree del menu
     glColor3f(1.0f, 1.0f, 1.0f);
     glRasterPos3f(width/100.0f*14.0f, height - height/100.0f*39.2f, 0.0f); //posizione 14% width 39.2%height 
     writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, campo.getPlayer(1)->getName());
@@ -1128,7 +1160,6 @@ GLvoid drawScene(GLvoid)
               //se il player1 ha deciso di cambiare texture
               if(player1ChangeTexture)
               {
-               //suppondo che le prima 2 texture non siano usabili per il giocatore
                 indexPlayer1Texture++;
                 indexPlayer1Texture = 3+indexPlayer1Texture%3;
                 cout<<"indexplauer "<< indexPlayer1Texture<<endl;
@@ -1154,16 +1185,14 @@ GLvoid drawScene(GLvoid)
               glDisable(GL_BLEND);
               glEnd();
 
-
-              //il player 2 decide ci cambiare texture player2
+              //il player 2 decide di cambiare texture player2
               glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
               glEnable( GL_BLEND );
               glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
               if(player2ChangeTexture)
               {
                 indexPlayer2Texture++;
-                //suppondo che le prima 2 texture non siano usabili per il giocatore
-                indexPlayer2Texture = 3 + indexPlayer2Texture%3;
+                indexPlayer2Texture = 3 + indexPlayer2Texture % 3;
                 glBindTexture(GL_TEXTURE_2D, texture[indexPlayer2Texture]);
                 player2ChangeTexture = false;
               }
@@ -1182,9 +1211,8 @@ GLvoid drawScene(GLvoid)
 
                 glTexCoord2f(1.0, 0);
                 glVertex3d(width/1.13, height -(height/2.7), 20.0f);
+
               glEnd();
-        glDisable(GL_TEXTURE_2D);
-      
       glPopMatrix();
     glPopMatrix();
   }
