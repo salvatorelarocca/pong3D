@@ -1087,8 +1087,22 @@ GLvoid drawScene(GLvoid)
     setView(0.0, 0.0, dist);
     glColor3f(1.0f, 1.0f, 1.0f);
     /*TODO funzione stampa classifica in drawscene*/
-    glRasterPos3f(width/100.0f*14.0f, height - height/100.0f*39.2f, 0.0f); //posizione 14% width 39.2%height 
-    writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "prova");
+    glRasterPos3f(width/100.0f*40.0f, height - height/100.0f*40.0f, 0.0f); //posizione 14% width 39.2%height 
+    string n;
+    int pnt;
+    fstream f;
+    int i=0;
+    f.open("classifica.txt", ios::in | ios::out);
+    while(!f.eof()){
+        f >> n;
+        f >> pnt;
+        if(f.eof()) break;
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, n);
+      glRasterPos3f(width-width/3, height - (i*33)-height/100.0f*40.0f, 0.0f); //33 è lo spiazzamento tra le righe su y
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(pnt));
+      i++;
+      glRasterPos3f(width/100.0f*40.0f, height - (i*30)-height/100.0f*40.0f, 0.0f);
+    }
     glEnable(GL_TEXTURE_2D);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
       glBindTexture(GL_TEXTURE_2D, texture[2]);
@@ -1211,8 +1225,10 @@ GLvoid drawScene(GLvoid)
 
                 glTexCoord2f(1.0, 0);
                 glVertex3d(width/1.13, height -(height/2.7), 20.0f);
-
+                glDisable(GL_BLEND);
+                
               glEnd();
+        glDisable(GL_TEXTURE_2D);
       glPopMatrix();
     glPopMatrix();
   }
