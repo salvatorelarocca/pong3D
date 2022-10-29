@@ -150,6 +150,7 @@ public:
   GLfloat getDim() { return dim; }
 
   void encreaseScore() { score++; }
+  void setScore(int s) { score = s; }
   int getScore() { return score; }
   /*movimento player sul piano YZ*/
   void encreaseY(GLfloat dimFieldY)
@@ -703,18 +704,23 @@ GLvoid inputKey(GLubyte key, GLint x, GLint y)
     }
     break;
   case ' ':
+    cout<<"start: "<<keyState[' ']<<endl;
     if(!inMenu && !keyState[' ']){ //se sei in menu e il gioco non è attivo allora possiamo attivarlo con space
       keyState[' '] = true;
       if(keyState[' ']){
-        ball->chageSpeedvector(xv, yv, zv);
+        ball->chageSpeedvector(xv, yv*rand()/RAND_MAX, zv*rand()/RAND_MAX);//ad ogni avvio la pallina cambia traiettoria lungo gli assi y z
+        xv *= -1;
         ball->setSpeedXYZ(); 
       }
     cout<<"start : "<<keyState[' ']<<endl;
     }
     if(flagWin1 || flagWin2){ //fine partita ritorna al menu resetto i player
-      inMenu = true;
+      inMenu = !inMenu;
+      keyState[' '] = false;
       campo.getPlayer(1)->setName("");
+      campo.getPlayer(1)->setScore(0);
       campo.getPlayer(2)->setName("");
+      campo.getPlayer(2)->setScore(0);
       ball->setSpeedXYZact(0.0f, 0.0f, 0.0f);
     }
     flagWin1 = false;
@@ -857,7 +863,7 @@ GLvoid drawScene(GLvoid)
       if(campo.getPlayer(1)->getScore() != 5)
         writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
       if(flagWin1)
-        writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, " WIN!!!");
+        writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "   WIN!!!");
     }
   glPopMatrix();
 
@@ -938,7 +944,7 @@ GLvoid drawScene(GLvoid)
       writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "SCORED");
   }
   if(flagWin2){
-      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "WIN!!!");
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, "   WIN!!!");
     }
   glPopMatrix();
 
@@ -1093,15 +1099,15 @@ GLvoid drawScene(GLvoid)
     fstream f;
     int i=0;
     f.open("classifica.txt", ios::in | ios::out);
-    while(!f.eof()){
-        f >> n;
-        f >> pnt;
-        if(f.eof()) break;
-      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, n);
-      glRasterPos3f(width-width/3, height - (i*33)-height/100.0f*40.0f, 0.0f); //33 è lo spiazzamento tra le righe su y
+    while(!f.eof() && i < 10){
+      f >> n;
+      f >> pnt;
+      if(f.eof()) break;
+      writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(i+1) + ". " + n);
+      glRasterPos3f(width - width/3, height - (i*33) - height/100.0f*40.0f, 0.0f); //33 è lo spiazzamento tra le righe su y
       writeBitmapString(GLUT_BITMAP_TIMES_ROMAN_24, to_string(pnt));
       i++;
-      glRasterPos3f(width/100.0f*40.0f, height - (i*30)-height/100.0f*40.0f, 0.0f);
+      glRasterPos3f(width/100.0f*40.0f, height - (i*33) - height/100.0f*40.0f, 0.0f);
     }
     glEnable(GL_TEXTURE_2D);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
