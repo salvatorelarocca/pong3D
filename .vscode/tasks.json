@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "install libs",
+      "command": "bash",
+      "args": [
+        "install-libs.sh"
+      ]
+    },
+    {
+      "type": "cppbuild",
+      "label": "C/C++: g++ compila il file attivo",
+      "command": "/usr/bin/g++",
+      "args": [
+        "-fdiagnostics-color=always",
+        "-g",
+        "${file}",
+        "-o",
+        "${fileDirname}/${fileBasenameNoExtension}",
+        "-lglut",
+        "-lGLU",
+        "-lGL",
+        "-lSOIL",
+        "-lGLEW",
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Attività generata dal 8==D"
+    }
+  ]
+}
